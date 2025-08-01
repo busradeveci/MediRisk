@@ -10,87 +10,95 @@ import {
   Paper,
   Chip,
   Avatar,
-  TextField,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Collapse
+  CircularProgress
 } from '@mui/material';
 
 import {
   PlayArrow,
-  Person,
-  Send,
-  SmartToy,
   Visibility,
-  Download,
-  ExpandMore,
-  ExpandLess
+  Download
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { healthTests, mockDashboardStats, mockTestResults, mockChatMessages, chatbotResponses } from '../utils/mockData';
-import { ChatMessage } from '../types';
-import robotIcon from '../images/robot.png'; // en üstte ekleyin
+import { healthTests, mockTestResults } from '../utils/mockData';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(mockChatMessages);
-  const [chatInput, setChatInput] = useState('');
-  const [isChatExpanded, setIsChatExpanded] = useState(false);
+  const [testHistory, setTestHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalTests: 0,
+    completedTests: 0,
+    pendingTests: 0,
+    averageScore: 0
+  });
+
+  // Test geçmişini çek
+  const fetchTestHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/user/history', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTestHistory(data);
+        calculateStats(data);
+      } else {
+        console.error('Test geçmişi alınamadı:', response.status);
+        // Fallback olarak mock data kullan
+        setTestHistory(mockTestResults);
+        calculateStats(mockTestResults);
+      }
+    } catch (error) {
+      console.error('Test geçmişi çekme hatası:', error);
+      // Fallback olarak mock data kullan
+      setTestHistory(mockTestResults);
+      calculateStats(mockTestResults);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // İstatistikleri hesapla
+  const calculateStats = (tests: any[]) => {
+    const totalTests = tests.length;
+    const completedTests = tests.filter(test => test.risk_score !== null && test.risk_score !== undefined).length;
+    const pendingTests = totalTests - completedTests;
+    
+    const completedTestsWithScore = tests.filter(test => test.risk_score !== null && test.risk_score !== undefined);
+    const averageScore = completedTestsWithScore.length > 0 
+      ? Math.round((completedTestsWithScore.reduce((sum, test) => sum + test.risk_score, 0) / completedTestsWithScore.length) * 10) / 10
+      : 0;
+
+    setStats({
+      totalTests,
+      completedTests,
+      pendingTests,
+      averageScore
+    });
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
+      fetchTestHistory();
     } else {
       navigate('/login');
     }
   }, [navigate]);
 
-  const handleChatSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
 
-    // Kullanıcı mesajını ekle
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: chatInput,
-      timestamp: new Date()
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-
-    // Chatbot yanıtını simüle et
-    setTimeout(() => {
-      const lowerInput = chatInput.toLowerCase();
-      let response = 'Üzgünüm, bu konuda size yardımcı olamıyorum.';
-
-      if (lowerInput.includes('yeni test') || lowerInput.includes('test ekle')) {
-        response = chatbotResponses['yeni test'].message;
-      } else if (lowerInput.includes('tansiyon')) {
-        response = chatbotResponses['tansiyon'].message;
-      } else if (lowerInput.includes('sonuç') || lowerInput.includes('rapor')) {
-        response = chatbotResponses['sonuçlar'].message;
-      } else if (lowerInput.includes('yardım') || lowerInput.includes('help')) {
-        response = chatbotResponses['yardım'].message;
-      }
-
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: response,
-        timestamp: new Date()
-      };
-
-      setChatMessages(prev => [...prev, botMessage]);
-    }, 1000);
-
-    setChatInput('');
-  };
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -163,9 +171,9 @@ const DashboardPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 4 }}>
-        {/* Sol Taraf - Ana İçerik */}
-        <Box sx={{ flex: { lg: 2 } }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Ana İçerik */}
+        <Box>
           {/* İstatistikler */}
           <Paper
             elevation={2}
@@ -195,7 +203,7 @@ const DashboardPage: React.FC = () => {
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#0ED1B1', fontFamily: 'Manrope, Arial, sans-serif', fontSize: '2rem' }}>
-                  {mockDashboardStats.totalTests}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : stats.totalTests}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: '12px' }}>
                   Toplam Test
@@ -203,7 +211,7 @@ const DashboardPage: React.FC = () => {
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#1B69DE', fontFamily: 'Manrope, Arial, sans-serif', fontSize: '2rem' }}>
-                  {mockDashboardStats.completedTests}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : stats.completedTests}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: '12px' }}>
                   Tamamlanan
@@ -211,7 +219,7 @@ const DashboardPage: React.FC = () => {
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#F9A825', fontFamily: 'Manrope, Arial, sans-serif', fontSize: '2rem' }}>
-                  {mockDashboardStats.pendingTests}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : stats.pendingTests}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: '12px' }}>
                   Bekleyen
@@ -219,7 +227,7 @@ const DashboardPage: React.FC = () => {
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#4787E6', fontFamily: 'Manrope, Arial, sans-serif', fontSize: '2rem' }}>
-                  {mockDashboardStats.averageScore}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : stats.averageScore}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: '12px' }}>
                   Ortalama Skor
@@ -365,7 +373,7 @@ const DashboardPage: React.FC = () => {
           </Box>
 
           {/* Son Test Sonuçları */}
-          {mockTestResults.length > 0 && (
+          {testHistory.length > 0 && (
             <Paper
               elevation={2}
               sx={{
@@ -391,8 +399,8 @@ const DashboardPage: React.FC = () => {
                 Son Test Sonuçları
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
-                {mockTestResults.slice(0, 2).map((result) => {
-                  const test = healthTests.find(t => t.id === result.testId);
+                {testHistory.slice(0, 2).map((result) => {
+                  const test = healthTests.find(t => t.id === result.test_type);
                   return (
                     <Card key={result.id} variant="outlined" sx={{
                       borderRadius: 3,
@@ -410,8 +418,8 @@ const DashboardPage: React.FC = () => {
                             {test?.name}
                           </Typography>
                           <Chip
-                            label={getRiskText(result.risk)}
-                            color={getRiskColor(result.risk) as any}
+                            label={getRiskText(result.risk_level)}
+                            color={getRiskColor(result.risk_level) as any}
                             size="small"
                             sx={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: '11px' }}
                           />
@@ -421,7 +429,7 @@ const DashboardPage: React.FC = () => {
                           fontFamily: 'Inter, Arial, sans-serif',
                           fontSize: '12px'
                         }}>
-                          Skor: {result.score}/100
+                          Skor: {result.risk_score}/100
                         </Typography>
                         <Typography variant="body2" sx={{
                           mb: 2,
@@ -479,138 +487,7 @@ const DashboardPage: React.FC = () => {
           )}
         </Box>
 
-        {/* Sağ Taraf - Chatbot */}
-        <Box sx={{ flex: { lg: 1 } }}>
-          <Paper
-            elevation={3}
-            sx={{
-              height: 'fit-content',
-              position: 'sticky',
-              top: 20,
-              borderRadius: 4,
-              background: '#F8FBFF',
-              border: '1.5px solid #E0E7EF',
-              boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
-            }}
-          >
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      mr: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <img
-                      src={robotIcon}
-                      alt="Asistan"
-                      style={{
-                        width: 32,
-                        height: 32,
-                        objectFit: 'contain',
-                        background: 'transparent',
-                        borderRadius: 0,
-                        userSelect: 'none',
-                        display: 'block',
-                      }}
-                      draggable={false}
-                    />
-                  </Box>
-                  <div>
-                    <div className="font-semibold font-poppins text-white text-base">MediRisk Asistan</div>
-                    <div className="text-xs text-[#7f5af0] font-poppins">Size nasıl yardımcı olabilirim?</div>
-                  </div>
-                </Box>
-                <IconButton
-                  onClick={() => setIsChatExpanded(!isChatExpanded)}
-                  size="small"
-                >
-                  {isChatExpanded ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-              </Box>
-            </Box>
 
-            {/* Chat Mesajları */}
-            <Collapse in={isChatExpanded}>
-              <Box sx={{ height: 400, overflowY: 'auto', p: 2 }}>
-                <List sx={{ p: 0 }}>
-                  {chatMessages.map((message) => (
-                    <ListItem key={message.id} sx={{ px: 0 }}>
-                      <ListItemAvatar>
-                        <Avatar sx={{
-                          bgcolor: message.type === 'user' ? '#1B69DE' : '#EAF3FA',
-                          color: message.type === 'user' ? 'white' : '#0F3978',
-                          fontFamily: 'Manrope, Arial, sans-serif'
-                        }}>
-                          {message.type === 'user' ? <Person /> : <SmartToy />}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Box sx={{
-                            bgcolor: message.type === 'user' ? '#1B69DE' : '#F8FBFF',
-                            color: message.type === 'user' ? 'white' : '#0F3978',
-                            p: 1.5,
-                            borderRadius: 2,
-                            maxWidth: '80%',
-                            fontFamily: 'Inter, Arial, sans-serif',
-                            fontSize: '12px'
-                          }}>
-                            <Typography variant="body2" sx={{
-                              fontFamily: 'Inter, Arial, sans-serif',
-                              fontSize: '12px'
-                            }}>
-                              {message.content}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-
-              {/* Chat Input */}
-              <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-                <Box component="form" onSubmit={handleChatSubmit} sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Mesajınızı yazın..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    sx={{
-                      '& .MuiOutlinedInput-root': { borderRadius: 3 },
-                      fontFamily: 'Inter, Arial, sans-serif',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <IconButton
-                    type="submit"
-                    color="primary"
-                    disabled={!chatInput.trim()}
-                    sx={{
-                      background: '#0ED1B1',
-                      color: '#fff',
-                      borderRadius: 2,
-                      transition: 'background 0.2s',
-                      '&:hover': {
-                        background: '#1B69DE'
-                      }
-                    }}
-                  >
-                    <Send />
-                  </IconButton>
-                </Box>
-              </Box>
-            </Collapse>
-          </Paper>
-        </Box>
       </Box>
     </Container>
   );

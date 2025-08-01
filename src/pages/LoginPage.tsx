@@ -114,23 +114,23 @@ const LoginPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Logo ve MediRisk Yazısı Üst Sol Köşede Dikey */}
+      {/* Logo ve MediRisk Yazısı - Responsive */}
       <Box sx={{
-        display: 'flex',
+        display: { xs: 'none', md: 'flex' }, // Mobilde gizle, desktop'ta göster
         flexDirection: 'column',
         alignItems: 'flex-start',
         position: 'fixed',
-        top: 24,
+        top: { md: '10vh', lg: '8vh' }, // Yukarıdan boşluk
         left: 32,
         userSelect: 'none',
         zIndex: 10,
       }}>
         <Box
           sx={{
-            width: 250,
-            height: 250,
+            width: { md: 200, lg: 250 },
+            height: { md: 200, lg: 250 },
             cursor: 'default',
-            mb: -2, // logo ile yazı arasındaki boşluk (isteğe göre ayarlayabilirsin)
+            mb: -2,
           }}
         >
           <img
@@ -153,7 +153,7 @@ const LoginPage: React.FC = () => {
             fontFamily: 'Manrope, Arial, sans-serif',
             fontWeight: 700,
             color: '#0F3978',
-            fontSize: '2.8rem',
+            fontSize: { md: '2.2rem', lg: '2.8rem' },
             letterSpacing: '-0.5px',
             userSelect: 'none',
             marginBottom: '4px',
@@ -168,7 +168,7 @@ const LoginPage: React.FC = () => {
             fontFamily: 'Inter, Arial, sans-serif',
             fontWeight: 400,
             color: '#4787E6',
-            fontSize: '0.85rem',
+            fontSize: { md: '0.75rem', lg: '0.85rem' },
             userSelect: 'none',
             marginTop: '-2px',
           }}
@@ -177,15 +177,84 @@ const LoginPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Hasta Girişi Kutusu Ortada */}
+      {/* Mobil Logo - Sadece mobilde göster */}
+      <Box sx={{
+        display: { xs: 'flex', md: 'none' },
+        flexDirection: 'column',
+        alignItems: 'center',
+        position: 'fixed',
+        top: 20,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        userSelect: 'none',
+        zIndex: 10,
+      }}>
+        <Box
+          sx={{
+            width: 100,
+            height: 100,
+            cursor: 'default',
+            mb: 1,
+          }}
+        >
+          <img
+            src={loginIcon}
+            alt="MediRisk Logo"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              backgroundColor: 'transparent',
+              userSelect: 'none',
+            }}
+            draggable={false}
+          />
+        </Box>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontFamily: 'Manrope, Arial, sans-serif',
+            fontWeight: 700,
+            color: '#0F3978',
+            fontSize: '1.6rem',
+            letterSpacing: '-0.5px',
+            userSelect: 'none',
+            marginBottom: '2px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          MediRisk
+        </Typography>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontFamily: 'Inter, Arial, sans-serif',
+            fontWeight: 400,
+            color: '#4787E6',
+            fontSize: '0.7rem',
+            userSelect: 'none',
+            textAlign: 'center',
+          }}
+        >
+          Geleceğin Sağlığı, Bugünün Analizi
+        </Typography>
+      </Box>
+
+      {/* Hasta Girişi Kutusu - Responsive */}
       <Box
         sx={{
-          margin: 'auto',
-          width: 700,         // ← Artık kutu 700px genişliğinde
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center', // Her zaman ortala
+          minHeight: '100vh',
+          width: { xs: '90%', sm: 500, md: 600, lg: 700 }, // Sabit genişlik
           maxWidth: '100%',
-          px: 4,
-          pt: 0,
-          pb: 6,
+          px: { xs: 2, sm: 3, md: 4 },
+          pt: { xs: 12, md: '5vh' }, // Masaüstünde yukarıdan boşluk
+          pb: { xs: 4, md: '5vh' }, // Masaüstünde aşağıdan boşluk
+          mt: { xs: 8, md: 0 }, // Mobilde logo için boşluk
+          mx: 'auto', // Her zaman yatayda ortala
         }}
       >
         {/* Login Kart */}
@@ -193,8 +262,8 @@ const LoginPage: React.FC = () => {
           elevation={16}
           sx={{
             borderRadius: 4,
-            px: 5,
-            py: 6,
+            px: { xs: 3, sm: 4, md: 5 },
+            py: { xs: 4, sm: 5, md: 6 },
             background: '#fff',
             boxShadow: '0 12px 40px 0 rgba(14,209,177,0.13)',
             width: '100%',
@@ -212,10 +281,10 @@ const LoginPage: React.FC = () => {
               sx={{
                 fontFamily: 'Manrope, Arial, sans-serif',
                 fontWeight: 650, 
-                textAlign: 'left',
-                mb: 4,
+                textAlign: { xs: 'center', md: 'left' },
+                mb: { xs: 3, md: 4 },
                 color: '#0F3978',
-                fontSize: '2.2rem', // burada büyütüldü (ör: 2.2rem)
+                fontSize: { xs: '1.8rem', sm: '2rem', md: '2.2rem' },
                 userSelect: 'none',
                 letterSpacing: '-0.5px',
               }}
@@ -391,21 +460,6 @@ const LoginPage: React.FC = () => {
                 </Link>
               </Typography>
             </Box>
-            <Alert
-              severity="info"
-              sx={{
-                mt: 4,
-                fontSize: '12px',
-                borderRadius: 2,
-                background: '#EAF3FA',
-                color: '#0F3978',
-                userSelect: 'none',
-              }}
-            >
-              <strong>Demo Hasta:</strong><br />
-              E-posta: <b>hasta@example.com</b><br />
-              Şifre: <b>123456</b>
-            </Alert>
           </CardContent>
         </Card>
       </Box>
