@@ -158,10 +158,19 @@ class ApiService {
     testType: string,
     formData: Record<string, any>
   ): Promise<ApiResponse<HealthTestResponse>> {
+    // Frontend test ID'lerini backend model isimlerine çevir
+    const modelMapping = {
+      'kardiyovaskuler-risk': 'cardiovascular',
+      'breast-cancer': 'breast_cancer',
+      'fetal-health': 'fetal_health'
+    };
+    
+    const backendModelName = modelMapping[testType as keyof typeof modelMapping] || testType;
+    
     return this.request('/predict', {
       method: 'POST',
       body: JSON.stringify({
-        test_type: testType,
+        test_type: backendModelName,
         form_data: formData,
       }),
     });

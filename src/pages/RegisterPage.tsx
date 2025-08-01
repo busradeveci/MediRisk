@@ -46,7 +46,7 @@ const RegisterPage: React.FC = () => {
     });
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -72,26 +72,43 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
-    // Mock kayıt - gerçek uygulamada API çağrısı yapılacak
-    const userId = Date.now().toString();
-    const newUser = {
-      id: userId,
-      email: formData.email,
-      name: formData.name,
-      userType: 'patient',
-      createdAt: new Date(),
-      age: parseInt(formData.age),
-      gender: formData.gender,
-      phone: formData.phone
-    };
+    try {
+      // Backend API'sine kayıt isteği gönder
+      const response = await fetch('http://localhost:8000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          phone: formData.phone || '',
+          user_type: 'patient'
+        }),
+      });
 
-    // Kullanıcıyı localStorage'a kaydet
-    localStorage.setItem('user', JSON.stringify(newUser));
-    setSuccess('Hasta kaydınız başarıyla oluşturuldu!');
-    // 2 saniye sonra yönlendir
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 2000);
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // Kullanıcı bilgilerini localStorage'a kaydet
+        localStorage.setItem('user', JSON.stringify(userData));
+        setSuccess('Hasta kaydınız başarıyla oluşturuldu!');
+        
+        // 2 saniye sonra yönlendir
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Kayıt sırasında bir hata oluştu.');
+      }
+    } catch (error) {
+      console.error('Kayıt hatası:', error);
+      setError('Sunucu bağlantısında sorun oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
   return (

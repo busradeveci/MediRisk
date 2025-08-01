@@ -87,13 +87,20 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; userType?: 'patient'
     return <Navigate to="/login" replace />;
   }
 
-  const user = JSON.parse(userData);
-  
-  if (userType && user.userType !== userType) {
+  try {
+    const user = JSON.parse(userData);
+    
+    if (userType && user.user_type !== userType) {
+      return <Navigate to="/login" replace />;
+    }
+
+    return <>{children}</>;
+  } catch (error) {
+    console.error('User data parse error:', error);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     return <Navigate to="/login" replace />;
   }
-
-  return <>{children}</>;
 };
 
 function App() {

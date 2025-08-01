@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -12,41 +12,72 @@ import {
   Chip,
   Box,
   Alert,
-  Button
+  Button,
+  CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { TestHistory } from '../types';
 
+interface TestResult {
+  id: number;
+  user_id: number;
+  test_type: string;
+  risk_score: number;
+  risk_level: string;
+  message: string;
+  recommendations: string[];
+  form_data: Record<string, any>;
+  created_at: string;
+}
+
 const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const [testHistory, setTestHistory] = useState<TestResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Mock geçmiş veri
-  const mockHistory: TestHistory[] = [
-    {
-      id: '1',
-      testType: 'Fetal Sağlık Taraması',
-      date: '2024-01-15',
-      result: {
-        risk: 'low',
-        score: 25,
-        message: 'Düşük risk seviyesi',
-        recommendations: ['Düzenli kontroller', 'Sağlıklı beslenme']
-      },
-      formData: { age: 28, gestationalAge: 24 }
-    },
-    {
-      id: '2',
-      testType: 'Meme Kanseri Risk Analizi',
-      date: '2024-01-10',
-      result: {
-        risk: 'medium',
-        score: 45,
-        message: 'Orta risk seviyesi',
-        recommendations: ['Doktor kontrolü', 'Mamografi']
-      },
-      formData: { age: 45, gender: 'Kadın' }
+  useEffect(() => {
+    fetchTestHistory();
+  }, []);
+
+  const fetchTestHistory = async () => {
+    try {
+      // Kullanıcı token'ını localStorage'dan al
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Giriş yapmanız gerekiyor.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/user/history', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTestHistory(data);
+      } else if (response.status === 401) {
+        setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+      } else {
+        setError('Test geçmişi alınırken bir hata oluştu.');
+      }
+    } catch (error) {
+      console.error('Test geçmişi hatası:', error);
+      setError('Sunucu bağlantısında sorun oluştu.');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -66,17 +97,108 @@ const HistoryPage: React.FC = () => {
     }
   };
 
+  const getTestTypeLabel = (testType: string) => {
+    switch (testType) {
+      case 'heart-disease':
+      case 'kardiyovaskuler-risk':
+      case 'cardiovascular':
+        return 'Kardiyovasküler Risk';
+      case 'fetal-health':
+      case 'fetal':
+        return 'Fetal Sağlık';
+      case 'breast-cancer':
+      case 'breast':
+        return 'Meme Kanseri';
+      default:
+        return testType;
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  if (mockHistory.length === 0) {
+  if (loading) {
     return (
       <Container
         maxWidth="lg"
         sx={{
           py: 4,
-          backgroundColor: '#FFFFFF', // Arka plan tamamen beyaz
+          backgroundColor: '#FFFFFF',
+          minHeight: '100vh',
+          fontFamily: 'Inter, Arial, sans-serif',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: '#0ED1B1' }} />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: 4,
+          backgroundColor: '#FFFFFF',
+          minHeight: '100vh',
+          fontFamily: 'Inter, Arial, sans-serif'
+        }}
+      >
+        <Paper elevation={3} sx={{
+          p: 4,
+          textAlign: 'center',
+          background: '#F8FBFF',
+          border: '1.5px solid #E0E7EF',
+          boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
+          borderRadius: 4,
+        }}>
+          <Typography variant="h4" gutterBottom sx={{
+            fontWeight: 700,
+            fontFamily: 'Manrope, Arial, sans-serif',
+            color: '#0F3978'
+          }}>
+            Test Geçmişi
+          </Typography>
+          <Alert severity="error" sx={{ mb: 3, fontFamily: 'Inter, Arial, sans-serif' }}>
+            {error}
+          </Alert>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => navigate('/dashboard')}
+            sx={{
+              background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
+              color: '#fff',
+              fontWeight: 600,
+              fontFamily: 'Manrope, Arial, sans-serif',
+              borderRadius: 2,
+              boxShadow: '0 2px 8px 0 rgba(14,209,177,0.08)',
+              transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #1B69DE 0%, #0ED1B1 100%)',
+                boxShadow: '0 4px 16px 0 rgba(27,105,222,0.12)',
+                transform: 'translateY(-2px) scale(1.03)'
+              }
+            }}
+          >
+            Ana Sayfaya Dön
+          </Button>
+        </Paper>
+      </Container>
+    );
+  }
+
+  if (testHistory.length === 0) {
+    return (
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: 4,
+          backgroundColor: '#FFFFFF',
           minHeight: '100vh',
           fontFamily: 'Inter, Arial, sans-serif'
         }}
@@ -102,7 +224,7 @@ const HistoryPage: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             sx={{
               background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
               color: '#fff',
@@ -184,7 +306,7 @@ const HistoryPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {mockHistory.map((test) => (
+              {testHistory.map((test) => (
                 <TableRow key={test.id} hover sx={{
                   background: '#FFFFFF',
                   borderBottom: '1.5px solid #E0E7EF',
@@ -194,23 +316,23 @@ const HistoryPage: React.FC = () => {
                 }}>
                   <TableCell>
                     <Typography variant="body1" sx={{ fontWeight: 500, color: '#0F3978', fontFamily: 'Manrope, Arial, sans-serif' }}>
-                      {test.testType}
+                      {getTestTypeLabel(test.test_type)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
-                      {formatDate(test.date)}
+                      {formatDate(test.created_at)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: '#1B69DE', fontFamily: 'Manrope, Arial, sans-serif' }}>
-                      {test.result.score}%
+                      {test.risk_score}%
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={getRiskLabel(test.result.risk)}
-                      color={getRiskColor(test.result.risk) as any}
+                      label={getRiskLabel(test.risk_level)}
+                      color={getRiskColor(test.risk_level) as any}
                       variant="filled"
                       sx={{
                         fontWeight: 600,
@@ -224,7 +346,7 @@ const HistoryPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
-                      {test.result.message}
+                      {test.message}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -251,7 +373,7 @@ const HistoryPage: React.FC = () => {
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mt: 2 }}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#1B69DE', fontWeight: 700, fontFamily: 'Manrope, Arial, sans-serif' }}>
-                {mockHistory.length}
+                {testHistory.length}
               </Typography>
               <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
                 Toplam Test
@@ -259,7 +381,7 @@ const HistoryPage: React.FC = () => {
             </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#2CB67D', fontWeight: 700, fontFamily: 'Manrope, Arial, sans-serif' }}>
-                {mockHistory.filter(t => t.result.risk === 'low').length}
+                {testHistory.filter(t => t.risk_level === 'low').length}
               </Typography>
               <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
                 Düşük Risk
@@ -267,7 +389,7 @@ const HistoryPage: React.FC = () => {
             </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#F9A825', fontWeight: 700, fontFamily: 'Manrope, Arial, sans-serif' }}>
-                {mockHistory.filter(t => t.result.risk === 'medium').length}
+                {testHistory.filter(t => t.risk_level === 'medium').length}
               </Typography>
               <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
                 Orta Risk

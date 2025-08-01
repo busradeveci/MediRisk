@@ -44,6 +44,7 @@ const Navbar: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/login');
   };
 

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 import joblib
@@ -15,6 +16,12 @@ import asyncio
 import requests
 import time
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+
+# Veritabanı ve auth importları
+from database import get_db, init_database, User, TestResult
+from auth import authenticate_user, create_user, create_access_token, verify_token, get_user_by_id
+from models import UserCreate, UserLogin, UserResponse, Token, TestResultCreate, TestResultResponse
 
 # Load environment variables
 load_dotenv()
@@ -81,6 +88,9 @@ class ModelUploadResponse(BaseModel):
     features: List[str]
     accuracy: Optional[float] = None
 
+# JWT Bearer token
+security = HTTPBearer()
+
 # Mock veri - gerçek uygulamada veritabanından gelecek
 test_history = []
 
@@ -91,38 +101,51 @@ model_info = {}
 def load_models():
     """ML modellerini yükle"""
     try:
-        # PACE modelleri için app/models dizinine bak - mutlak yol kullan
-        models_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app", "models"))
+        # Önce backend/models dizinine bak
+        models_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "models"))
         if not os.path.exists(models_base_dir):
-            logger.warning(f"Models dizini bulunamadı: {models_base_dir}")
-            logger.info("Modeller henüz oluşturulmamış. Jupyter notebook'ları çalıştırın.")
-            return
+            # Eğer backend/models yoksa, app/models'e bak
+            models_base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend", "models"))
+            if not os.path.exists(models_base_dir):
+                logger.warning(f"Models dizini bulunamadı: {models_base_dir}")
+                logger.info("Modeller henüz oluşturulmamış. create_sample_model.py scriptini çalıştırın.")
+                return
 
         # Model dosyalarını yükle
         model_files = {
-            'breast_cancer': 'model_breast_cancer.pkl',
-            'cardiovascular': 'model_cardiovascular.pkl', 
-            'fetal_health': 'model_fetal_health.pkl'
+            'breast_cancer': 'breast_cancer.pkl',
+            'cardiovascular': 'cardiovascular.pkl', 
+            'fetal_health': 'fetal_health.pkl'
         }
         
         for model_key, model_file in model_files.items():
             model_path = os.path.join(models_base_dir, model_file)
+            logger.info(f"🔍 Model yükleniyor: {model_key} - {model_path}")
+            
             if not os.path.exists(model_path):
-                logger.warning(f"Model dosyası bulunamadı: {model_path}")
+                logger.warning(f"❌ Model dosyası bulunamadı: {model_path}")
                 continue
             
             try:
                 # Modeli yükle
+                logger.info(f"📦 Model dosyası yükleniyor: {model_path}")
                 model_data = joblib.load(model_path)
+                logger.info(f"📦 Model dosyası yüklendi, tip: {type(model_data).__name__}")
                 
                 # Model objesi ve metadata'yı çıkar
                 if isinstance(model_data, dict):
+                    logger.info(f"📦 Model paketi içeriği: {list(model_data.keys())}")
                     model = model_data.get('model')
                     scaler = model_data.get('scaler') 
                     features = model_data.get('features', [])
                     metadata = model_data.get('metadata', {})
+                    
+                    if model is None:
+                        logger.error(f"❌ Model paketinde 'model' anahtarı bulunamadı: {model_key}")
+                        continue
                 else:
                     # Eski format - sadece model objesi
+                    logger.info(f"📦 Eski format model: {type(model_data).__name__}")
                     model = model_data
                     scaler = None
                     features = []
@@ -151,7 +174,9 @@ def load_models():
                 logger.info(f"✅ Model yüklendi: {model_key} ({type(model).__name__})")
                 
             except Exception as e:
-                logger.error(f"❌ Model yükleme hatası ({model_key}): {e}")
+                logger.error(f"❌ Model yükleme hatası ({model_key}): {str(e)}")
+                import traceback
+                logger.error(f"❌ Hata detayı: {traceback.format_exc()}")
                 
         logger.info(f"📊 Toplam {len(models)} model yüklendi")
                     
@@ -796,6 +821,7 @@ def process_general_result(prediction, confidence: float, prediction_label: Opti
 @app.on_event("startup")
 async def startup_event():
     """Uygulama başlatıldığında çalışır"""
+    init_database()  # Veritabanını başlat
     load_models()
     logger.info("API başlatıldı ve modeller yüklendi")
 
@@ -922,7 +948,7 @@ async def predict_health_risk(request: HealthTestRequest):
             "loaded_at": model_info[model_name]["loaded_at"]
         }
         
-        # Sonucu geçmişe kaydet
+        # Sonucu geçmişe kaydet (sadece memory'de)
         test_id = f"{test_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         test_history.append({
             "id": test_id,
@@ -1277,4 +1303,325 @@ def create_fallback_response(domain: str, user_prompt: str, patient_data: Dict[s
 </div>
 """
     
-    return response 
+    return response
+
+# Kullanıcı Yönetimi API Endpoint'leri
+
+@app.post("/register", response_model=UserResponse)
+async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
+    """Yeni kullanıcı kaydı"""
+    try:
+        # Email kontrolü
+        existing_user = db.query(User).filter(User.email == user_data.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bu email adresi zaten kayıtlı"
+            )
+        
+        # Yeni kullanıcı oluştur
+        new_user = create_user(
+            db=db,
+            email=user_data.email,
+            name=user_data.name,
+            password=user_data.password,
+            age=user_data.age,
+            gender=user_data.gender,
+            phone=user_data.phone
+        )
+        
+        return UserResponse(
+            id=new_user.id,
+            email=new_user.email,
+            name=new_user.name,
+            age=new_user.age,
+            gender=new_user.gender,
+            phone=new_user.phone,
+            user_type=new_user.user_type,
+            created_at=new_user.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kullanıcı kayıt hatası: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Kullanıcı kaydı sırasında bir hata oluştu"
+        )
+
+@app.post("/login", response_model=Token)
+async def login_user(user_credentials: UserLogin, db: Session = Depends(get_db)):
+    """Kullanıcı girişi"""
+    try:
+        # Kullanıcıyı doğrula
+        user = authenticate_user(db, user_credentials.email, user_credentials.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz email veya şifre"
+            )
+        
+        # Access token oluştur
+        access_token = create_access_token(data={"sub": str(user.id)})
+        
+        # UserResponse objesi oluştur
+        user_response = UserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            age=user.age,
+            gender=user.gender,
+            phone=user.phone,
+            user_type=user.user_type,
+            created_at=user.created_at
+        )
+        
+        return Token(access_token=access_token, token_type="bearer", user=user_response)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kullanıcı giriş hatası: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Giriş sırasında bir hata oluştu"
+        )
+
+@app.get("/me", response_model=UserResponse)
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Mevcut kullanıcı bilgilerini getir"""
+    try:
+        # Token'ı doğrula
+        payload = verify_token(credentials.credentials)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        # Kullanıcıyı getir
+        user = get_user_by_id(db, int(user_id))
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Kullanıcı bulunamadı"
+            )
+        
+        return UserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            age=user.age,
+            gender=user.gender,
+            phone=user.phone,
+            user_type=user.user_type,
+            created_at=user.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kullanıcı bilgileri getirme hatası: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Kullanıcı bilgileri alınırken bir hata oluştu"
+        )
+
+@app.get("/user/history", response_model=List[TestResultResponse])
+async def get_user_test_history(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Kullanıcının test geçmişini getir"""
+    try:
+        # Token'ı doğrula
+        payload = verify_token(credentials.credentials)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        # Kullanıcının test sonuçlarını getir
+        test_results = db.query(TestResult).filter(TestResult.user_id == int(user_id)).order_by(TestResult.created_at.desc()).all()
+        
+        return [
+            TestResultResponse(
+                id=result.id,
+                user_id=result.user_id,
+                test_type=result.test_type,
+                risk_score=result.risk_score,
+                risk_level=result.risk_level,
+                message=result.message,
+                recommendations=result.get_recommendations_list(),
+                form_data=result.get_form_data_dict(),
+                created_at=result.created_at
+            )
+            for result in test_results
+        ]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Test geçmişi getirme hatası: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Test geçmişi alınırken bir hata oluştu"
+        )
+
+@app.post("/user/test-result", response_model=TestResultResponse)
+async def save_test_result(
+    test_data: TestResultCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Kullanıcının test sonucunu kaydet"""
+    try:
+        # Token'ı doğrula
+        payload = verify_token(credentials.credentials)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        # Test sonucunu kaydet
+        new_test_result = TestResult(
+            user_id=int(user_id),
+            test_type=test_data.test_type,
+            risk_score=test_data.risk_score,
+            risk_level=test_data.risk_level,
+            message=test_data.message,
+            recommendations=test_data.recommendations,
+            form_data=test_data.form_data
+        )
+        
+        db.add(new_test_result)
+        db.commit()
+        db.refresh(new_test_result)
+        
+        return TestResultResponse(
+            id=new_test_result.id,
+            user_id=new_test_result.user_id,
+            test_type=new_test_result.test_type,
+            risk_score=new_test_result.risk_score,
+            risk_level=new_test_result.risk_level,
+            message=new_test_result.message,
+            recommendations=new_test_result.recommendations,
+            form_data=new_test_result.form_data,
+            created_at=new_test_result.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Test sonucu kaydetme hatası: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Test sonucu kaydedilirken bir hata oluştu"
+        )
+
+@app.post("/predict-and-save", response_model=HealthTestResponse)
+async def predict_and_save_health_risk(
+    request: HealthTestRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Sağlık riski tahmini yap ve veritabanına kaydet"""
+    try:
+        # Token'ı doğrula
+        payload = verify_token(credentials.credentials)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        test_type = request.test_type
+        form_data = request.form_data
+        
+        # Test tipine göre model adını belirle
+        model_mapping = {
+            "cardiovascular": "cardiovascular",
+            "breast_cancer":"breast_cancer",
+            "fetal_health":"fetal_health"
+        }
+        
+        model_name = model_mapping.get(test_type)
+        
+        if not model_name:
+            raise HTTPException(status_code=400, detail="Geçersiz test tipi")
+        
+        if model_name not in models:
+            raise HTTPException(
+                status_code=503, 
+                detail=f"Model henüz yüklenmedi: {model_name}. Lütfen model dosyasını yükleyin."
+            )
+        
+        # Model ile tahmin yap
+        model = models[model_name]
+        result = predict_with_model(model, form_data, model_name)
+        
+        # Model bilgilerini ekle
+        result["model_info"] = {
+            "model_name": model_name,
+            "model_type": type(model).__name__,
+            "loaded_at": model_info[model_name]["loaded_at"]
+        }
+        
+        # Test sonucunu veritabanına kaydet
+        new_test_result = TestResult(
+            user_id=int(user_id),
+            test_type=test_type,
+            risk_score=result["score"],
+            risk_level=result["risk"],
+            message=result["message"],
+            recommendations=json.dumps(result["recommendations"]),
+            form_data=json.dumps(form_data)
+        )
+        
+        db.add(new_test_result)
+        db.commit()
+        db.refresh(new_test_result)
+        
+        logger.info(f"Test sonucu kaydedildi: User ID {user_id}, Test Type {test_type}")
+        
+        return HealthTestResponse(
+            **result,
+            timestamp=datetime.now()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Tahmin ve kaydetme hatası: {str(e)}")
+        if 'db' in locals():
+            db.rollback()
+        raise HTTPException(status_code=500, detail=f"Tahmin hatası: {str(e)}") 

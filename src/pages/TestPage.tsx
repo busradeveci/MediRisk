@@ -104,14 +104,35 @@ const TestPage: React.FC = () => {
     setLoading(true);
     
     try {
-      // Backend API'ye gerçek çağrı yap
-      const response = await fetch('http://localhost:8008/predict', {
+      // Kullanıcı token'ını kontrol et
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        navigate('/login');
+        return;
+      }
+
+      // Frontend test ID'lerini backend model isimlerine çevir
+      const modelMapping = {
+        'kardiyovaskuler-risk': 'cardiovascular',
+        'breast-cancer': 'breast_cancer',
+        'fetal-health': 'fetal_health'
+      };
+      
+      const backendModelName = modelMapping[testId as keyof typeof modelMapping];
+      if (!backendModelName) {
+        throw new Error(`Geçersiz test tipi: ${testId}`);
+      }
+
+      // Backend API'ye gerçek çağrı yap (test sonucunu da kaydet)
+      const response = await fetch('http://localhost:8000/predict-and-save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          test_type: testId,
+          test_type: backendModelName,
           form_data: formData
         })
       });
@@ -133,11 +154,6 @@ const TestPage: React.FC = () => {
           createdAt: new Date()
         };
         
-        // Mevcut test sonuçlarını al ve yeni sonucu ekle
-        const existingResults = JSON.parse(localStorage.getItem('testResults') || '[]');
-        existingResults.push(fullResult);
-        localStorage.setItem('testResults', JSON.stringify(existingResults));
-        
         // Test sonuç sayfasına yönlendir
         navigate(`/test-result/${fullResult.id}`);
         return;
@@ -157,11 +173,6 @@ const TestPage: React.FC = () => {
         recommendations: backendResult.recommendations,
         createdAt: new Date()
       };
-      
-      // Mevcut test sonuçlarını al ve yeni sonucu ekle
-      const existingResults = JSON.parse(localStorage.getItem('testResults') || '[]');
-      existingResults.push(fullResult);
-      localStorage.setItem('testResults', JSON.stringify(existingResults));
       
       // Test sonuç sayfasına yönlendir
       navigate(`/test-result/${fullResult.id}`);
@@ -316,6 +327,41 @@ const TestPage: React.FC = () => {
     }, 1000);
 
     setChatInput('');
+  };
+
+  const saveTestResultToDatabase = async (testResult: TestResult, token: string) => {
+    try {
+      // Frontend test ID'lerini backend model isimlerine çevir
+      const modelMapping = {
+        'kardiyovaskuler-risk': 'cardiovascular',
+        'breast-cancer': 'breast_cancer',
+        'fetal-health': 'fetal_health'
+      };
+      
+      const backendModelName = modelMapping[testResult.testId as keyof typeof modelMapping] || testResult.testId;
+      
+      const response = await fetch('http://localhost:8000/user/test-result', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          test_type: backendModelName,
+          risk_score: testResult.score,
+          risk_level: testResult.risk,
+          message: testResult.message,
+          recommendations: JSON.stringify(testResult.recommendations),
+          form_data: JSON.stringify(testResult.formData)
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Test sonucu kaydedilemedi:', response.status);
+      }
+    } catch (error) {
+      console.error('Test sonucu kaydetme hatası:', error);
+    }
   };
 
   const getRiskColor = (risk: string) => {

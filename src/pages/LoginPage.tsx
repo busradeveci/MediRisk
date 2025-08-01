@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
     });
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -38,16 +38,63 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    if (formData.email === 'hasta@example.com' && formData.password === '123456') {
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        email: formData.email,
-        name: 'Ahmet Yılmaz',
-        userType: 'patient'
-      }));
-      navigate('/dashboard');
-    } else {
-      setError('Geçersiz e-posta veya şifre.');
+    try {
+      console.log('Login isteği gönderiliyor...', formData.email);
+      
+      // Backend API'sine giriş isteği gönder
+      const response = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+
+      console.log('Login response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Login response data:', data);
+        
+        // Token'ı localStorage'a kaydet
+        localStorage.setItem('token', data.access_token);
+        
+        // Backend'den gelen user bilgilerini kullan
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('Kullanıcı bilgileri kaydedildi:', data.user);
+          navigate('/dashboard');
+        } else {
+          // Eğer user bilgileri response'da yoksa /me endpoint'inden al
+          const userResponse = await fetch('http://localhost:8000/me', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${data.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('Kullanıcı bilgileri /me endpoint\'inden alındı:', userData);
+            navigate('/dashboard');
+          } else {
+            console.error('Kullanıcı bilgileri alınamadı:', userResponse.status);
+            setError('Kullanıcı bilgileri alınamadı. Lütfen tekrar deneyin.');
+          }
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Login hatası:', errorData);
+        setError(errorData.detail || 'Geçersiz e-posta veya şifre.');
+      }
+    } catch (error) {
+      console.error('Giriş hatası:', error);
+      setError('Sunucu bağlantısında sorun oluştu. Lütfen tekrar deneyin.');
     }
   };
 
