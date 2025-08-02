@@ -98,17 +98,22 @@ const HistoryPage: React.FC = () => {
   };
 
   const getTestTypeLabel = (testType: string) => {
-    switch (testType) {
+    switch (testType?.toLowerCase()) {
+      case 'cardiovascular':
+      case 'kalp_hastaligi':
       case 'heart-disease':
       case 'kardiyovaskuler-risk':
-      case 'cardiovascular':
-        return 'Kardiyovasküler Risk';
-      case 'fetal-health':
-      case 'fetal':
-        return 'Fetal Sağlık';
+        return 'Kalp Hastalığı Risk Analizi';
+      case 'breast_cancer':
+      case 'meme_kanseri':
       case 'breast-cancer':
       case 'breast':
-        return 'Meme Kanseri';
+        return 'Meme Kanseri Risk Analizi';
+      case 'fetal_health':
+      case 'fetal_saglik':
+      case 'fetal-health':
+      case 'fetal':
+        return 'Fetal Sağlık Taraması';
       default:
         return testType;
     }

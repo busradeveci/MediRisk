@@ -778,9 +778,74 @@ const TestResultPage: React.FC = () => {
                 gap: 2
               }}>
                 {Object.entries(testResult.formData).map(([key, value]) => {
-                  // Field adını daha okunabilir hale getir
+                  // Field adını Türkçe karşılığına çevir
                   const getFieldLabel = (fieldName: string) => {
-                    return fieldName
+                    const fieldMappings: { [key: string]: string } = {
+                      // Genel alanlar
+                      'age': 'Yaş',
+                      'gender': 'Cinsiyet',
+                      'weight': 'Kilo',
+                      'height': 'Boy',
+                      'bmi': 'Vücut Kitle İndeksi',
+                      
+                      // Kalp hastalığı alanları
+                      'chest_pain': 'Göğüs Ağrısı',
+                      'blood_pressure': 'Tansiyon',
+                      'bloodpressure': 'Tansiyon',
+                      'cholesterol': 'Kolesterol',
+                      'blood_sugar': 'Kan Şekeri',
+                      'bloodsugar': 'Kan Şekeri',
+                      'exercise_angina': 'Egzersiz Anjini',
+                      'exerciseangina': 'Egzersiz Anjini',
+                      'diabetes': 'Diyabet',
+                      'smoking': 'Sigara Kullanımı',
+                      'family_history': 'Aile Geçmişi',
+                      'familyhistory': 'Aile Geçmişi',
+                      'exercise': 'Egzersiz',
+                      'stress': 'Stres',
+                      'alcohol': 'Alkol Kullanımı',
+                      
+                      // Meme kanseri alanları
+                      'breast_pain': 'Meme Ağrısı',
+                      'lump': 'Kitle',
+                      'discharge': 'Akıntı',
+                      'skin_changes': 'Cilt Değişiklikleri',
+                      'nipple_changes': 'Meme Ucu Değişiklikleri',
+                      'family_cancer': 'Aile Kanser Geçmişi',
+                      'previous_cancer': 'Önceki Kanser Geçmişi',
+                      'previouscancer': 'Önceki Kanser Geçmişi',
+                      'hormone_therapy': 'Hormon Tedavisi',
+                      'hormonetherapy': 'Hormon Tedavisi',
+                      'birth_control': 'Doğum Kontrolü',
+                      'obesity': 'Obezite',
+                      'early_menarche': 'Erken Adet Başlangıcı',
+                      'earlymenarche': 'Erken Adet Başlangıcı',
+                      'late_menopause': 'Geç Menopoz',
+                      'latemenopause': 'Geç Menopoz',
+                      
+                      // Fetal sağlık alanları
+                      'gestational_age': 'Gebelik Yaşı',
+                      'gestationalage': 'Gebelik Yaşı',
+                      'previous_pregnancies': 'Önceki Gebelikler',
+                      'previouspregnancies': 'Önceki Gebelikler',
+                      'pregnancy_complications': 'Gebelik Komplikasyonları',
+                      'maternal_age': 'Anne Yaşı',
+                      'prenatal_care': 'Prenatal Bakım',
+                      'ultrasound': 'Ultrason',
+                      'blood_tests': 'Kan Testleri',
+                      'genetic_screening': 'Genetik Tarama',
+                      'maternal_health': 'Anne Sağlığı',
+                      'fetal_movement': 'Fetal Hareket',
+                      'fetalmovement': 'Fetal Hareket',
+                      'amniotic_fluid': 'Amniyotik Sıvı',
+                      'placenta': 'Plasenta',
+                      'umbilical_cord': 'Göbek Kordonu',
+                      'hypertension': 'Hipertansiyon',
+                      'bleeding': 'Vajinal Kanama'
+                    };
+                    
+                    const lowerFieldName = fieldName.toLowerCase();
+                    return fieldMappings[lowerFieldName] || fieldName
                       .replace(/_/g, ' ')
                       .replace(/\b\w/g, l => l.toUpperCase())
                       .replace(/([A-Z])/g, ' $1')
