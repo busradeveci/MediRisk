@@ -36,6 +36,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { healthTests } from '../utils/mockData';
 import { TestResult } from '../types';
 import { analyzeWithAI } from '../utils/ai';
+import heartIcon from '../images/Heart.png';
+import cancerIcon from '../images/cancer.png';
+import fetalIcon from '../images/fetal.png';
 
 interface ChatMessage {
   id: string;
@@ -185,6 +188,40 @@ const TestResultPage: React.FC = () => {
       case 'medium': return <Warning color="warning" />;
       case 'high': return <Error color="error" />;
       default: return <Assessment />;
+    }
+  };
+
+  // Test tipine göre test adını döndüren fonksiyon
+  const getTestNameByType = (testType: string) => {
+    switch (testType?.toLowerCase()) {
+      case 'cardiovascular':
+      case 'kalp_hastaligi':
+        return 'Kalp Hastalığı Risk Analizi';
+      case 'breast_cancer':
+      case 'meme_kanseri':
+        return 'Meme Kanseri Risk Analizi';
+      case 'fetal_health':
+      case 'fetal_saglik':
+        return 'Fetal Sağlık Taraması';
+      default:
+        return 'Risk Değerlendirmesi';
+    }
+  };
+
+  // Test tipine göre icon dosyasını döndüren fonksiyon
+  const getTestIconByType = (testType: string) => {
+    switch (testType?.toLowerCase()) {
+      case 'cardiovascular':
+      case 'kalp_hastaligi':
+        return heartIcon;
+      case 'breast_cancer':
+      case 'meme_kanseri':
+        return cancerIcon;
+      case 'fetal_health':
+      case 'fetal_saglik':
+        return fetalIcon;
+      default:
+        return heartIcon; // Varsayılan icon
     }
   };
 
@@ -543,7 +580,7 @@ const TestResultPage: React.FC = () => {
     return null;
   }
 
-  const test = healthTests.find(t => t.id === testResult.testId);
+
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, backgroundColor: '#FFFFFF', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
@@ -569,21 +606,19 @@ const TestResultPage: React.FC = () => {
           Dashboard'a Dön
         </Button>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          {test?.icon && (
-            <img
-              src={test.icon}
-              alt={test.name}
-              style={{
-                width: 48,
-                height: 48,
-                objectFit: 'contain',
-                marginRight: 16,
-                background: 'transparent',
-                userSelect: 'none'
-              }}
-              draggable={false}
-            />
-          )}
+          <img
+            src={getTestIconByType(testResult?.testId)}
+            alt={getTestNameByType(testResult?.testId)}
+            style={{
+              width: 48,
+              height: 48,
+              objectFit: 'contain',
+              marginRight: 16,
+              background: 'transparent',
+              userSelect: 'none'
+            }}
+            draggable={false}
+          />
           <Box>
             <Typography variant="h4" component="h1" sx={{
               fontWeight: 700,
@@ -591,7 +626,7 @@ const TestResultPage: React.FC = () => {
               color: '#0F3978',
               letterSpacing: '-0.5px'
             }}>
-              {test?.name} - Sonuçlar
+              {getTestNameByType(testResult?.testId)} - Sonuçlar
             </Typography>
             <Typography variant="h6" sx={{
               color: '#4787E6',
@@ -743,7 +778,15 @@ const TestResultPage: React.FC = () => {
                 gap: 2
               }}>
                 {Object.entries(testResult.formData).map(([key, value]) => {
-                  const field = test?.fields.find(f => f.name === key);
+                  // Field adını daha okunabilir hale getir
+                  const getFieldLabel = (fieldName: string) => {
+                    return fieldName
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase())
+                      .replace(/([A-Z])/g, ' $1')
+                      .trim();
+                  };
+                  
                   return (
                     <Paper key={key} variant="outlined" sx={{
                       p: 2,
@@ -756,7 +799,7 @@ const TestResultPage: React.FC = () => {
                         color: '#4787E6',
                         fontFamily: 'Inter, Arial, sans-serif'
                       }} gutterBottom>
-                        {field?.label || key}
+                        {getFieldLabel(key)}
                       </Typography>
                       <Typography variant="body1" sx={{
                         fontWeight: 600,
@@ -1043,7 +1086,7 @@ const TestResultPage: React.FC = () => {
                       color: '#4787E6',
                       fontFamily: 'Inter, Arial, sans-serif'
                     }}>
-                      {test?.name}
+                      {getTestNameByType(testResult?.testId)}
                     </Typography>
                   </StepLabel>
                 </Step>
@@ -1142,7 +1185,7 @@ const TestResultPage: React.FC = () => {
               fontFamily: 'Manrope, Arial, sans-serif',
               color: '#0F3978'
             }}>
-              {test?.name} - PDF Raporu
+              {getTestNameByType(testResult?.testId)} - PDF Raporu
             </Typography>
             <Box sx={{ my: 3 }}>
               <Typography variant="h6" gutterBottom sx={{
@@ -1155,7 +1198,7 @@ const TestResultPage: React.FC = () => {
               <Typography variant="body2" paragraph sx={{
                 fontFamily: 'Inter, Arial, sans-serif'
               }}>
-                <strong>Test Adı:</strong> {test?.name}
+                <strong>Test Adı:</strong> {getTestNameByType(testResult?.testId)}
               </Typography>
               <Typography variant="body2" paragraph sx={{
                 fontFamily: 'Inter, Arial, sans-serif'
