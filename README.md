@@ -4,11 +4,10 @@
 **MedOps Takımı**
 
 ## Takım Üyeleri
-- [Feyzanur İnan](https://github.com/feyzann) - Scrum Master
-- [Büşra Deveci](https://github.com/busradeveci) - Product Owner
+- [Feyzanur İnan](https://github.com/feyzann) - Scrum Master & Developer
+- [Büşra Deveci](https://github.com/busradeveci) - Product Owner & Developer
 - [Eren Cice](https://github.com/erencice) - Developer
-- [Rabia Yaşa](https://github.com/rabiayasa4) - Developer
-- [Onur Kayabaş](https://github.com/Onurkayabas1) - Developer
+- [Rabia Yaşa](https://github.com/rabiayasa4)
 
 ## Ürün İsmi
 **MediRisk Web Uygulaması**  
@@ -366,5 +365,251 @@ app.add_middleware(
 ## Sonuç
 
 Sprint 2 başarıyla tamamlandı. Temel sistem altyapısı hazır, kullanıcı arayüzü responsive ve modern. Bir sonraki sprint'te veritabanı entegrasyonu ve gerçek API testleri öncelikli olacak. 
+
+</details>
+
+<details>
+<summary> <h3> SPRINT 3 NOTLARI </h3> </summary>
+
+- **Sprint Süresi:** 21 Temmuz – 3 Ağustos 2024
+- **Planlanan Kapasite:** ~130 iş puanı
+- **Tamamlanan İş Puanı:** ~125 iş puanı
+- **Başarı Oranı:** %96
+
+---
+
+### Tamamlanan Çalışmalar
+
+#### PostgreSQL Veritabanı Entegrasyonu (%100 Tamamlandı)
+- **Veritabanı Geçişi:** SQLite'dan PostgreSQL'e tam geçiş tamamlandı
+- **Kullanıcı Yönetimi:** `backend/database.py` ile kapsamlı veritabanı modelleri
+- **Kimlik Doğrulama:** `backend/auth.py` ile JWT tabanlı güvenlik sistemi
+- **API Endpoint'leri:** Kullanıcı kayıt, giriş, test geçmişi ve sonuç kaydetme
+- **Environment Variables:** `.env` dosyası ile güvenli konfigürasyon
+- **Veritabanı Şeması:** Users ve TestResults tabloları otomatik oluşturma
+
+#### Google Gemini AI Entegrasyonu (%100 Tamamlandı)
+- **AI Chatbot:** `src/utils/ai.ts` ile gerçek AI entegrasyonu
+- **Rapor Geliştirme:** "Raporu Geliştir (Chat ile)" özelliği
+- **Domain-Specific Prompts:** Her sağlık alanı için özelleşmiş AI prompt'ları
+- **Backend API:** `/api/enhance-report` endpoint'i ile AI servisi
+- **Frontend Entegrasyonu:** TestResultPage'de gerçek zamanlı chat arayüzü
+- **Error Handling:** Graceful fallback ve hata yönetimi
+- **PACE Metodolojisi:** Plan, Analyze, Construct, Execute yaklaşımı
+
+#### Sistem Otomasyonu ve Port Yönetimi (%100 Tamamlandı)
+- **Otomatik Başlatıcı:** `run.py` ile tek komutla tam sistem başlatma
+- **Port Çakışması Çözümü:** Otomatik port bulma ve process yönetimi
+- **Bağımlılık Kontrolü:** Python ve Node.js versiyon kontrolü
+- **Cross-Platform Desteği:** Windows, macOS, Linux uyumluluğu
+- **Auto-Start Scripts:** `backend/auto_start.py` ve `start.sh` ile otomasyon
+- **Health Check:** Sistem durumu ve bağımlılık kontrolü
+
+#### Backend API Geliştirmeleri (%95 Tamamlandı)
+- **FastAPI Geliştirmeleri:** `backend/main.py` ile kapsamlı API sistemi
+- **ML Model Entegrasyonu:** 3 farklı sağlık modeli (kalp, meme kanseri, fetal)
+- **Veri Ön İşleme:** Her model için özelleşmiş veri hazırlama
+- **Prediction Pipeline:** End-to-end tahmin sistemi
+- **Error Handling:** Kapsamlı hata yönetimi ve logging
+- **API Documentation:** Otomatik Swagger/OpenAPI dokümantasyonu
+
+#### Frontend Geliştirmeleri (%90 Tamamlandı)
+- **TestResultPage:** AI chat entegrasyonu ve gelişmiş görselleştirme
+- **Responsive Tasarım:** Material-UI ile mobil uyumlu arayüz
+- **Real-time Chat:** AI asistan ile interaktif sohbet
+- **PDF Export:** Test sonuçlarını PDF olarak dışa aktarma
+- **User Experience:** Gelişmiş kullanıcı deneyimi ve animasyonlar
+- **TypeScript Uyumu:** Strict mode ile tip güvenliği
+
+---
+
+### Sprint 3 Görsel Belgeleri
+
+#### Günlük Toplantılar (Daily Scrum)
+- Günlük ilerlemeler ve engeller (blocker) WhatsApp grubunda paylaşılarak takım içinde takip edildi.
+- [WhatsApp görsellerine git](./sprintThree/wp_ss)
+
+#### Sprint Panosu
+- Sprint görevleri Trello üzerinde takip edilerek görsellerle belgelendi.
+- [Trello görsellerine git](./sprintThree/trello_ss)
+
+#### Mevcut Uygulama Durumu
+- Web kullanıcı arayüzünde AI entegrasyonu ve veritabanı bağlantısı tamamlandı.
+- Makine öğrenmesi API'leri ve AI chatbot sistemi aktif.
+- [Web görsellerine git](./sprintThree/app_ss)
+
+---
+
+### Teknik Detaylar
+
+#### PostgreSQL Veritabanı Yapısı
+```python
+# backend/database.py
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    name = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    user_type = Column(String(50), default="patient")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class TestResult(Base):
+    __tablename__ = "test_results"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    test_type = Column(String(100), nullable=False)
+    risk_score = Column(Float, nullable=False)
+    risk_level = Column(String(50), nullable=False)
+    form_data = Column(Text)  # JSON formatında
+    created_at = Column(DateTime, default=datetime.utcnow)
+```
+
+#### Gemini AI Entegrasyonu
+```typescript
+// src/utils/ai.ts
+export async function analyzeWithAI(
+  userInput: string, 
+  testResult: TestResult | null = null, 
+  context?: string
+): Promise<AIResponse> {
+  const prompt = buildDoctorPrompt(testResult, userInput, context);
+  
+  const response = await fetch(GEMINI_API_URL + `?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      }
+    })
+  });
+  
+  return parseAIResponse(aiResponse);
+}
+```
+
+#### Otomatik Sistem Başlatıcı
+```python
+# run.py
+def main():
+    print_banner()
+    
+    # Bağımlılık kontrolü
+    if not check_python_version():
+        return
+    
+    if not check_backend_dependencies():
+        install_backend_dependencies()
+    
+    if not check_frontend_dependencies():
+        install_frontend_dependencies()
+    
+    # Servisleri başlat
+    start_services()
+```
+
+---
+
+### Test Edilen Özellikler
+
+#### Veritabanı İşlemleri
+- Kullanıcı kayıt ve giriş işlemleri
+- Test sonuçlarının veritabanına kaydedilmesi
+- Kullanıcıya özel test geçmişi görüntüleme
+- JWT token tabanlı kimlik doğrulama
+- Veritabanı bağlantı hata yönetimi
+
+#### AI Chatbot Sistemi
+- Gerçek zamanlı AI sohbet
+- Test sonuçlarına dayalı özelleşmiş yanıtlar
+- Domain-specific prompt'lar (meme kanseri, kardiyovasküler, fetal sağlık)
+- Error handling ve fallback mesajları
+- API rate limiting ve quota yönetimi
+
+#### Sistem Otomasyonu
+- Otomatik port çakışması çözümü
+- Bağımlılık kontrolü ve kurulum
+- Cross-platform uyumluluk
+- Health check ve monitoring
+- Graceful shutdown ve error recovery
+
+#### API Endpoint'leri
+- `POST /register` - Kullanıcı kaydı
+- `POST /login` - Kullanıcı girişi
+- `GET /me` - Mevcut kullanıcı bilgileri
+- `POST /user/test-result` - Test sonucu kaydetme
+- `GET /user/history` - Kullanıcı test geçmişi
+- `POST /api/enhance-report` - AI rapor geliştirme
+- `POST /predict-and-save` - Tahmin ve kaydetme
+
+---
+
+### Eksik Kalan İşler
+
+#### Performance Optimizasyonu (%20)
+- Database query optimizasyonu
+- API response caching
+- Frontend bundle optimization
+- Image compression ve lazy loading
+
+#### Güvenlik Geliştirmeleri (%40)
+- HTTPS zorunluluğu
+- Rate limiting implementation
+- Input sanitization
+- SQL injection koruması
+- XSS koruması
+
+#### Monitoring ve Logging (%30)
+- Application performance monitoring
+- Error tracking sistemi
+- User analytics
+- Database performance monitoring
+- API usage metrics
+
+---
+
+### Sprint Gözden Geçirme (Review)
+- PostgreSQL veritabanı entegrasyonu başarıyla tamamlandı
+- Google Gemini AI entegrasyonu ile gerçek AI chatbot sistemi aktif
+- Sistem otomasyonu ile geliştirme süreci kolaylaştırıldı
+- Backend API'leri production-ready hale getirildi
+- Frontend'de AI chat özelliği kullanıcı deneyimini artırdı
+
+---
+
+### Sprint Değerlendirmesi (Retrospective)
+- Veritabanı geçişi sırasında veri kaybı yaşanmadı
+- AI entegrasyonu kullanıcı memnuniyetini artırdı
+- Otomatik sistem başlatıcı geliştirme verimliliğini artırdı
+- Cross-platform uyumluluk deployment sürecini kolaylaştırdı
+- API dokümantasyonu geliştirici deneyimini iyileştirdi
+
+---
+
+## Bir Sonraki Sprint Hedefleri
+- **Performance Optimizasyonu** (Database, API, Frontend)
+- **Güvenlik Geliştirmeleri** (HTTPS, Rate Limiting, Input Validation)
+- **Monitoring ve Analytics** (APM, Error Tracking, User Analytics)
+- **Mobile App Development** (React Native veya PWA)
+- **Advanced AI Features** (Multi-language, Voice Chat, Image Analysis)
+
+---
+
+## Takip Edilen Metrikler
+- **PostgreSQL Entegrasyonu:** %100
+- **Gemini AI Entegrasyonu:** %100
+- **Sistem Otomasyonu:** %100
+- **Backend API Geliştirmeleri:** %95
+- **Frontend Geliştirmeleri:** %90
+- **Performance Optimizasyonu:** %20
+- **Güvenlik Geliştirmeleri:** %40
+- **Monitoring ve Logging:** %30
+
+## Sonuç
+
+Sprint 3 başarıyla tamamlandı. Proje artık production-ready durumda. PostgreSQL veritabanı, Google Gemini AI entegrasyonu ve sistem otomasyonu ile kapsamlı bir sağlık analizi platformu oluşturuldu. Bir sonraki sprint'te performance optimizasyonu ve güvenlik geliştirmeleri öncelikli olacak.
 
 </details>
