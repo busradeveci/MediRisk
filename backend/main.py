@@ -58,6 +58,7 @@ class HealthTestResponse(BaseModel):
     timestamp: datetime
     confidence: Optional[float] = None
     model_info: Optional[Dict[str, Any]] = None
+    test_id: Optional[int] = None
 
 class TestHistory(BaseModel):
     id: str
@@ -1671,7 +1672,8 @@ async def predict_and_save_health_risk(
         
         return HealthTestResponse(
             **result,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
+            test_id=new_test_result.id
         )
         
     except HTTPException:

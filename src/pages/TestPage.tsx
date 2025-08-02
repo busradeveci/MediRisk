@@ -163,7 +163,7 @@ const TestPage: React.FC = () => {
       
       // Backend sonucunu TestResult formatına çevir
       const fullResult: TestResult = {
-        id: Date.now().toString(),
+        id: backendResult.test_id?.toString(),
         testId: testId!,
         patientId: '1', // Mock hasta ID
         formData: { ...formData },
