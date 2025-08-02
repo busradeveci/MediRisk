@@ -307,13 +307,19 @@ const HistoryPage: React.FC = () => {
             </TableHead>
             <TableBody>
               {testHistory.map((test) => (
-                <TableRow key={test.id} hover sx={{
-                  background: '#FFFFFF',
-                  borderBottom: '1.5px solid #E0E7EF',
-                  '&:hover': {
-                    background: '#F0F6FF'
-                  }
-                }}>
+                <TableRow 
+                  key={test.id} 
+                  hover 
+                  sx={{
+                    background: '#FFFFFF',
+                    borderBottom: '1.5px solid #E0E7EF',
+                    '&:hover': {
+                      background: '#F0F6FF',
+                      cursor: 'pointer'
+                    }
+                  }}
+                  onClick={() => navigate(`/test-result/${test.id}`)}
+                >
                   <TableCell>
                     <Typography variant="body1" sx={{ fontWeight: 500, color: '#0F3978', fontFamily: 'Manrope, Arial, sans-serif' }}>
                       {getTestTypeLabel(test.test_type)}

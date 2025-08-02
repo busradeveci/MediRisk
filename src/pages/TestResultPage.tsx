@@ -49,6 +49,7 @@ const TestResultPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showPDF, setShowPDF] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -89,41 +90,59 @@ const TestResultPage: React.FC = () => {
   }, [aiInitialized]);
 
   useEffect(() => {
-    const loadTestResult = (resultId: string) => {
+    const loadTestResult = async (resultId: string) => {
       try {
-        // Yeni sistem - testResults array'inde ara
-        const savedResults = JSON.parse(localStorage.getItem('testResults') || '[]');
-        const result = savedResults.find((r: TestResult) => r.id === resultId);
-        
-        if (result) {
-          // LocalStorage'dan gelen veriyi doğru formata dönüştür
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Giriş yapmanız gerekiyor.');
+          navigate('/login');
+          return;
+        }
+
+        // Backend'den test sonucunu getir
+        const response = await fetch(`http://localhost:8000/user/test-result/${resultId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Backend'den gelen veriyi TestResult formatına dönüştür
           const formattedResult: TestResult = {
-            ...result,
-            patientId: result.patientId || 'patient-1',
-            formData: result.data || result.formData || {},
-            createdAt: new Date(result.createdAt)
+            id: data.id.toString(),
+            testId: data.test_type,
+            patientId: 'patient-1',
+            formData: data.form_data || {},
+            risk: data.risk_level,
+            score: data.risk_score,
+            message: data.message,
+            recommendations: data.recommendations || [],
+            createdAt: new Date(data.created_at),
+            confidence: 0.95 // Varsayılan değer
           };
+          
           setTestResult(formattedResult);
           
           // AI'ya test sonuçlarını tanıt
           setTimeout(() => initializeAI(formattedResult), 1000);
+        } else if (response.status === 401) {
+          setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        } else if (response.status === 404) {
+          setError('Test sonucu bulunamadı.');
         } else {
-          // Eski sistem de kontrol et
-          const oldResult = localStorage.getItem(`testResult_${resultId}`);
-          if (oldResult) {
-            const parsedResult = JSON.parse(oldResult);
-            setTestResult(parsedResult);
-            setTimeout(() => initializeAI(parsedResult), 1000);
-          } else {
-            // Test sonucu bulunamazsa dashboard'a yönlendir
-            console.log('Test sonucu bulunamadı, dashboard\'a yönlendiriliyor...');
-            navigate('/dashboard');
-          }
+          setError('Test sonucu alınırken bir hata oluştu.');
         }
-      } catch (error) {
-        console.error('Test sonucu yüklenirken hata:', error);
-        navigate('/dashboard');
-      }
+              } catch (error) {
+          console.error('Test sonucu yüklenirken hata:', error);
+          setError('Sunucu bağlantısında sorun oluştu.');
+        }
       setLoading(false);
     };
 
@@ -479,12 +498,37 @@ const TestResultPage: React.FC = () => {
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h5">Yükleniyor...</Typography>
+        <CircularProgress size={60} sx={{ color: '#0ED1B1' }} />
+        <Typography variant="h6" sx={{ mt: 2, color: '#0F3978' }}>
+          Test sonucu yükleniyor...
+        </Typography>
       </Container>
     );
   }
 
-  if (!testResult) {
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+        <Button 
+          onClick={() => navigate('/dashboard')} 
+          sx={{ 
+            background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
+            color: '#fff',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #1B69DE 0%, #0ED1B1 100%)',
+            }
+          }}
+        >
+          Dashboard'a Dön
+        </Button>
+      </Container>
+    );
+  }
+
+  if (!testResult && !error) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
         <Typography variant="h5" color="error">Test sonucu bulunamadı</Typography>
@@ -495,7 +539,11 @@ const TestResultPage: React.FC = () => {
     );
   }
 
-  const test = healthTests.find(t => t.id === (testResult?.testId || id));
+  if (!testResult) {
+    return null;
+  }
+
+  const test = healthTests.find(t => t.id === testResult.testId);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, backgroundColor: '#FFFFFF', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
@@ -1054,80 +1102,7 @@ const TestResultPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Hızlı İşlemler */}
-          <Card elevation={2} sx={{
-            mt: 4,
-            background: '#F8FBFF',
-            border: '1.5px solid #E0E7EF',
-            boxShadow: '0 2px 12px 0 rgba(30, 89, 174, 0.07)',
-            borderRadius: 4,
-          }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{
-                fontWeight: 600,
-                mb: 3,
-                fontFamily: 'Manrope, Arial, sans-serif',
-                color: '#0F3978'
-              }}>
-                Hızlı İşlemler
-              </Typography>
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                startIcon={<FileDownload />}
-                onClick={() => downloadPDF()}
-                sx={{
-                  mb: 2,
-                  borderRadius: 2,
-                  fontFamily: 'Manrope, Arial, sans-serif',
-                  fontWeight: 600,
-                  background: '#1B69DE',
-                  '&:hover': {
-                    background: '#0F3978'
-                  }
-                }}
-              >
-                PDF İndir
-              </Button>
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={<FileDownload />}
-                onClick={() => downloadWord()}
-                sx={{
-                  mb: 2,
-                  borderRadius: 2,
-                  fontFamily: 'Manrope, Arial, sans-serif',
-                  fontWeight: 600,
-                  background: '#4787E6',
-                  '&:hover': {
-                    background: '#0F3978'
-                  }
-                }}
-              >
-                Word İndir
-              </Button>
-              <Button
-                fullWidth
-                variant="contained"
-                color="secondary"
-                startIcon={<Visibility />}
-                onClick={() => setShowPDF(true)}
-                sx={{
-                  borderRadius: 2,
-                  fontFamily: 'Manrope, Arial, sans-serif',
-                  fontWeight: 600,
-                  background: '#ff6b35',
-                  '&:hover': {
-                    background: '#ff5722'
-                  }
-                }}
-              >
-                PDF Görüntüle
-              </Button>
-            </CardContent>
-          </Card>
+
         </Box>
       </Box>
 

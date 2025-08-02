@@ -1481,6 +1481,62 @@ async def get_user_test_history(credentials: HTTPAuthorizationCredentials = Depe
             detail="Test geçmişi alınırken bir hata oluştu"
         )
 
+@app.get("/user/test-result/{test_id}", response_model=TestResultResponse)
+async def get_test_result_by_id(
+    test_id: int,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Belirli bir test sonucunu getir"""
+    try:
+        # Token'ı doğrula
+        payload = verify_token(credentials.credentials)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Geçersiz token"
+            )
+        
+        # Test sonucunu getir ve kullanıcıya ait olduğunu kontrol et
+        test_result = db.query(TestResult).filter(
+            TestResult.id == test_id,
+            TestResult.user_id == int(user_id)
+        ).first()
+        
+        if not test_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Test sonucu bulunamadı"
+            )
+        
+        return TestResultResponse(
+            id=test_result.id,
+            user_id=test_result.user_id,
+            test_type=test_result.test_type,
+            risk_score=test_result.risk_score,
+            risk_level=test_result.risk_level,
+            message=test_result.message,
+            recommendations=test_result.get_recommendations_list(),
+            form_data=test_result.get_form_data_dict(),
+            created_at=test_result.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Test sonucu getirme hatası: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Test sonucu alınırken bir hata oluştu"
+        )
+
 @app.post("/user/test-result", response_model=TestResultResponse)
 async def save_test_result(
     test_data: TestResultCreate,
