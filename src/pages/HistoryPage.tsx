@@ -383,7 +383,7 @@ const HistoryPage: React.FC = () => {
           }}>
             İstatistikler
           </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mt: 2 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 3, mt: 2 }}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#1B69DE', fontWeight: 700, fontFamily: 'Manrope, Arial, sans-serif' }}>
                 {testHistory.length}
@@ -406,6 +406,14 @@ const HistoryPage: React.FC = () => {
               </Typography>
               <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
                 Orta Risk
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h4" sx={{ color: '#D32F2F', fontWeight: 700, fontFamily: 'Manrope, Arial, sans-serif' }}>
+                {testHistory.filter(t => t.risk_level === 'high').length}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
+                Yüksek Risk
               </Typography>
             </Box>
           </Box>
