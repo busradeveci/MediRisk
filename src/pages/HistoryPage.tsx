@@ -38,6 +38,8 @@ const HistoryPage: React.FC = () => {
 
   useEffect(() => {
     fetchTestHistory();
+    // Sayfa yüklendiğinde scroll'u en üste taşı
+    window.scrollTo(0, 0);
   }, []);
 
   const fetchTestHistory = async () => {
