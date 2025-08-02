@@ -377,112 +377,219 @@ const DashboardPage: React.FC = () => {
             <Paper
               elevation={2}
               sx={{
-                p: 3,
+                p: 4,
                 borderRadius: 4,
-                background: '#F8FBFF',
+                background: 'linear-gradient(135deg, #F8FBFF 0%, #F0F6FF 100%)',
                 border: '1.5px solid #E0E7EF',
-                boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
+                boxShadow: '0 8px 32px 0 rgba(30, 89, 174, 0.12)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
+                }
               }}
             >
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{
-                  fontFamily: 'Manrope, Arial, sans-serif',
-                  fontWeight: 600,
-                  color: '#1B69DE',
-                  mb: 3,
-                  fontSize: '1.15rem',
-                  userSelect: 'none',
-                }}
-              >
-                Son Test Sonuçları
-              </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
-                {testHistory.slice(0, 2).map((result) => {
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: 'Manrope, Arial, sans-serif',
+                    fontWeight: 700,
+                    color: '#0F3978',
+                    fontSize: '1.4rem',
+                    userSelect: 'none',
+                  }}
+                >
+                  Son Test Sonuçları
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/history')}
+                  sx={{
+                    background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontFamily: 'Manrope, Arial, sans-serif',
+                    borderRadius: 2,
+                    px: 3,
+                    py: 1,
+                    boxShadow: '0 4px 16px 0 rgba(14,209,177,0.15)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, #1B69DE 0%, #0ED1B1 100%)',
+                      boxShadow: '0 6px 20px 0 rgba(27,105,222,0.25)',
+                      transform: 'translateY(-2px)'
+                    }
+                  }}
+                >
+                  Tüm Geçmişi Görüntüle
+                </Button>
+              </Box>
+              
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 3 }}>
+                {testHistory.slice(0, 2).map((result, index) => {
                   const test = healthTests.find(t => t.id === result.test_type);
                   return (
-                    <Card key={result.id} variant="outlined" sx={{
-                      borderRadius: 3,
-                      background: '#F8FBFF',
-                      border: '1.5px solid #E0E7EF',
-                      boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
-                    }}>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                          <Typography variant="h6" sx={{
-                            fontWeight: 600,
-                            fontFamily: 'Manrope, Arial, sans-serif',
-                            color: '#0F3978'
-                          }}>
-                            {test?.name}
-                          </Typography>
+                    <Card 
+                      key={result.id} 
+                      sx={{
+                        borderRadius: 3,
+                        background: '#FFFFFF',
+                        border: '1.5px solid #E0E7EF',
+                        boxShadow: '0 6px 20px 0 rgba(30, 89, 174, 0.08)',
+                        transition: 'all 0.3s ease',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 32px 0 rgba(30, 89, 174, 0.15)',
+                          borderColor: '#0ED1B1'
+                        },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '3px',
+                          background: result.risk_level === 'high' 
+                            ? 'linear-gradient(90deg, #FF6B6B 0%, #FF8E8E 100%)'
+                            : result.risk_level === 'medium'
+                            ? 'linear-gradient(90deg, #FFA726 0%, #FFB74D 100%)'
+                            : 'linear-gradient(90deg, #4CAF50 0%, #66BB6A 100%)',
+                        }
+                      }}
+                    >
+                      <CardContent sx={{ p: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6" sx={{
+                              fontWeight: 700,
+                              fontFamily: 'Manrope, Arial, sans-serif',
+                              color: '#0F3978',
+                              mb: 1,
+                              fontSize: '1.1rem'
+                            }}>
+                              {test?.name}
+                            </Typography>
+                            <Typography variant="body2" sx={{
+                              fontFamily: 'Inter, Arial, sans-serif',
+                              fontSize: '12px',
+                              color: '#4787E6',
+                              mb: 2
+                            }}>
+                              {new Date(result.created_at).toLocaleDateString('tr-TR')}
+                            </Typography>
+                          </Box>
                           <Chip
                             label={getRiskText(result.risk_level)}
                             color={getRiskColor(result.risk_level) as any}
-                            size="small"
-                            sx={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: '11px' }}
+                            size="medium"
+                            sx={{ 
+                              fontFamily: 'Inter, Arial, sans-serif', 
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              px: 2,
+                              py: 1,
+                              borderRadius: 2
+                            }}
                           />
                         </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{
-                          mb: 2,
-                          fontFamily: 'Inter, Arial, sans-serif',
-                          fontSize: '12px'
+                        
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          mb: 3,
+                          p: 2,
+                          background: 'linear-gradient(135deg, #F8FBFF 0%, #F0F6FF 100%)',
+                          borderRadius: 2,
+                          border: '1px solid #E0E7EF'
                         }}>
-                          Skor: {result.risk_score}/100
-                        </Typography>
+                          <Typography variant="h4" sx={{
+                            fontWeight: 800,
+                            fontFamily: 'Manrope, Arial, sans-serif',
+                            color: '#1B69DE',
+                            mr: 2
+                          }}>
+                            {result.risk_score}
+                          </Typography>
+                          <Typography variant="body1" sx={{
+                            fontFamily: 'Inter, Arial, sans-serif',
+                            color: '#4787E6',
+                            fontWeight: 500
+                          }}>
+                            /100 Skor
+                          </Typography>
+                        </Box>
+                        
                         <Typography variant="body2" sx={{
-                          mb: 2,
                           fontFamily: 'Inter, Arial, sans-serif',
-                          fontSize: '12px'
+                          fontSize: '13px',
+                          color: '#0F3978',
+                          lineHeight: 1.6,
+                          mb: 3,
+                          p: 2,
+                          background: '#FFFFFF',
+                          borderRadius: 2,
+                          border: '1px solid #E0E7EF'
                         }}>
                           {result.message}
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Button
-                            size="small"
-                            startIcon={<Visibility />}
-                            variant="outlined"
-                            sx={{
-                              fontFamily: 'Manrope, Arial, sans-serif',
-                              fontWeight: 600,
-                              fontSize: '12px',
-                              color: '#1B69DE',
-                              borderColor: '#1B69DE',
-                              '&:hover': {
-                                background: '#EAF3FA',
-                                borderColor: '#0ED1B1',
-                                color: '#0ED1B1'
-                              }
-                            }}
-                          >
-                            Görüntüle
-                          </Button>
-                          <Button
-                            size="small"
-                            startIcon={<Download />}
-                            variant="outlined"
-                            sx={{
-                              fontFamily: 'Manrope, Arial, sans-serif',
-                              fontWeight: 600,
-                              fontSize: '12px',
-                              color: '#0F3978',
-                              borderColor: '#0F3978',
-                              '&:hover': {
-                                background: '#EAF3FA',
-                                borderColor: '#0ED1B1',
-                                color: '#0ED1B1'
-                              }
-                            }}
-                          >
-                            PDF İndir
-                          </Button>
-                        </Box>
+                        
+                                                 <Button
+                           fullWidth
+                           variant="outlined"
+                           onClick={() => navigate(`/test-result/${result.id}`)}
+                           sx={{
+                             fontFamily: 'Manrope, Arial, sans-serif',
+                             fontWeight: 600,
+                             fontSize: '13px',
+                             color: '#1B69DE',
+                             borderColor: '#1B69DE',
+                             borderRadius: 2,
+                             py: 1.5,
+                             transition: 'all 0.3s ease',
+                             '&:hover': {
+                               background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
+                               borderColor: 'transparent',
+                               color: '#fff',
+                               transform: 'translateY(-1px)',
+                               boxShadow: '0 4px 12px 0 rgba(14,209,177,0.2)'
+                             }
+                           }}
+                         >
+                           Detayları Görüntüle
+                         </Button>
                       </CardContent>
                     </Card>
                   );
                 })}
               </Box>
+              
+              {testHistory.length > 2 && (
+                <Box sx={{ 
+                  mt: 3, 
+                  textAlign: 'center',
+                  p: 2,
+                  background: 'linear-gradient(135deg, #F0F6FF 0%, #EAF3FA 100%)',
+                  borderRadius: 3,
+                  border: '1px dashed #1B69DE'
+                }}>
+                  <Typography variant="body2" sx={{
+                    fontFamily: 'Inter, Arial, sans-serif',
+                    color: '#4787E6',
+                    fontWeight: 500
+                  }}>
+                    Ve {testHistory.length - 2} test sonucu daha...
+                  </Typography>
+                </Box>
+              )}
             </Paper>
           )}
         </Box>
