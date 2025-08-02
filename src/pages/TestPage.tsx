@@ -16,21 +16,11 @@ import {
   Step,
   StepLabel,
   Alert,
-  CircularProgress,
-  Card,
-  Avatar,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Collapse
+  CircularProgress
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { healthTests, predictTestResult, mockChatMessages } from '../utils/mockData';
-import { TestResult, ChatMessage } from '../types';
-import { Send, Person, ExpandMore, ExpandLess } from '@mui/icons-material';
-import robotIcon from '../images/robot.png'; // en üste ekleyin
+import { healthTests, predictTestResult } from '../utils/mockData';
+import { TestResult } from '../types';
 
 const TestPage: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
@@ -39,9 +29,6 @@ const TestPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(mockChatMessages);
-  const [chatInput, setChatInput] = useState('');
-  const [isChatExpanded, setIsChatExpanded] = useState(false);
 
   const test = healthTests.find(t => t.id === testId);
 
@@ -285,49 +272,7 @@ const TestPage: React.FC = () => {
     }
   };
 
-  const handleChatSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
 
-    // Kullanıcı mesajını ekle
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: chatInput,
-      timestamp: new Date()
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-
-    // Chatbot yanıtını simüle et
-    setTimeout(() => {
-      const lowerInput = chatInput.toLowerCase();
-      let response = 'Üzgünüm, bu konuda size yardımcı olamıyorum.';
-
-      if (lowerInput.includes('test') || lowerInput.includes('nasıl')) {
-        response = `Bu ${test?.name} testi hakkında bilgi verebilirim. Test ${test?.description}`;
-      } else if (lowerInput.includes('süre') || lowerInput.includes('ne kadar')) {
-        response = 'Test yaklaşık 5-10 dakika sürer. Tüm soruları dikkatlice cevaplamanız önemlidir.';
-      } else if (lowerInput.includes('sonuç') || lowerInput.includes('rapor')) {
-        response = 'Test tamamlandıktan sonra detaylı sonuç raporunuzu görebilir ve PDF olarak indirebilirsiniz.';
-      } else if (lowerInput.includes('güvenli') || lowerInput.includes('güvenlik')) {
-        response = 'Tüm verileriniz güvenle korunur. Test sonuçları sadece size özeldir.';
-      } else if (lowerInput.includes('yardım') || lowerInput.includes('help')) {
-        response = 'Size şu konularda yardımcı olabilirim:\n• Test hakkında bilgi\n• Test süresi\n• Sonuç raporları\n• Güvenlik';
-      }
-
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: response,
-        timestamp: new Date()
-      };
-
-      setChatMessages(prev => [...prev, botMessage]);
-    }, 1000);
-
-    setChatInput('');
-  };
 
   const saveTestResultToDatabase = async (testResult: TestResult, token: string) => {
     try {
@@ -434,333 +379,162 @@ const TestPage: React.FC = () => {
 
   return (
     <Container
-      maxWidth="lg"
+      maxWidth="md"
       sx={{
         py: 4,
-        backgroundColor: '#FFFFFF', // Arka plan beyaz (FFFFF)
+        backgroundColor: '#FFFFFF',
         minHeight: '100vh',
         fontFamily: 'Inter, Arial, sans-serif'
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 4 }}>
-        {/* Sol Taraf - Test Formu */}
-        <Box sx={{ flex: { lg: 2 } }}>
-          <Paper
-            elevation={3}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          background: '#F8FBFF',
+          border: '1.5px solid #E0E7EF',
+          boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
+          borderRadius: 4,
+        }}
+      >
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <img
+              src={test.icon}
+              alt={test.name}
+              style={{
+                width: 48,
+                height: 48,
+                objectFit: 'contain',
+                background: 'transparent',
+                marginBottom: 8,
+                userSelect: 'none'
+              }}
+              draggable={false}
+            />
+            <Typography
+              variant="h3"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                fontFamily: 'Manrope, Arial, sans-serif',
+                color: '#0F3978',
+                letterSpacing: '-0.5px',
+                userSelect: 'none'
+              }}
+            >
+              {test.name}
+            </Typography>
+          </Box>
+          <Typography
+            variant="body1"
             sx={{
-              p: 4,
-              background: '#F8FBFF',
-              border: '1.5px solid #E0E7EF',
-              boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
-              borderRadius: 4,
+              color: '#4787E6',
+              fontFamily: 'Inter, Arial, sans-serif',
+              mb: 2,
             }}
           >
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <img
-                  src={test.icon}
-                  alt={test.name}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    objectFit: 'contain',
-                    background: 'transparent',
-                    marginBottom: 8,
-                    userSelect: 'none'
-                  }}
-                  draggable={false}
-                />
-                <Typography
-                  variant="h3"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 700,
-                    fontFamily: 'Manrope, Arial, sans-serif',
-                    color: '#0F3978',
-                    letterSpacing: '-0.5px',
-                    userSelect: 'none'
-                  }}
-                >
-                  {test.name}
-                </Typography>
-              </Box>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: '#4787E6',
-                  fontFamily: 'Inter, Arial, sans-serif',
-                  mb: 2,
-                }}
-              >
-                {test.description}
-              </Typography>
-            </Box>
-
-            <Stepper activeStep={0} sx={{ mb: 4 }}>
-              <Step>
-                <StepLabel
-                  sx={{
-                    '& .MuiStepLabel-label': {
-                      fontFamily: 'Manrope, Arial, sans-serif',
-                      color: '#0F3978',
-                      fontWeight: 600,
-                    }
-                  }}
-                >
-                  Bilgileri Girin
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel
-                  sx={{
-                    '& .MuiStepLabel-label': {
-                      fontFamily: 'Manrope, Arial, sans-serif',
-                      color: '#0F3978',
-                      fontWeight: 600,
-                    }
-                  }}
-                >
-                  Analiz
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel
-                  sx={{
-                    '& .MuiStepLabel-label': {
-                      fontFamily: 'Manrope, Arial, sans-serif',
-                      color: '#0F3978',
-                      fontWeight: 600,
-                    }
-                  }}
-                >
-                  Sonuçlar
-                </StepLabel>
-              </Step>
-            </Stepper>
-
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-              <Box sx={{ mb: 4 }}>
-                {test.fields.map(renderField)}
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  onClick={() => navigate('/dashboard')}
-                  disabled={loading}
-                  sx={{
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontFamily: 'Manrope, Arial, sans-serif',
-                    color: '#0F3978',
-                    borderColor: '#0ED1B1',
-                    '&:hover': {
-                      borderColor: '#1B69DE',
-                      background: '#F0F6FF'
-                    }
-                  }}
-                >
-                  İptal
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={loading}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSubmit();
-                  }}
-                  startIcon={loading ? <CircularProgress size={20} /> : null}
-                  sx={{
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontFamily: 'Manrope, Arial, sans-serif',
-                    background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
-                    color: '#fff',
-                    boxShadow: '0 2px 8px 0 rgba(14,209,177,0.08)',
-                    transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
-                    '&:hover': {
-                      background: 'linear-gradient(90deg, #1B69DE 0%, #0ED1B1 100%)',
-                      boxShadow: '0 4px 16px 0 rgba(27,105,222,0.12)',
-                      transform: 'translateY(-2px) scale(1.03)'
-                    }
-                  }}
-                >
-                  {loading ? 'Analiz Ediliyor...' : 'Analizi Başlat'}
-                </Button>
-              </Box>
-            </form>
-          </Paper>
+            {test.description}
+          </Typography>
         </Box>
 
-        {/* Sağ Taraf - Chatbot */}
-        <Box sx={{ flex: { lg: 1 } }}>
-          <Card
-            elevation={3}
-            sx={{
-              height: 'fit-content',
-              position: 'sticky',
-              top: 20,
-              borderRadius: 4,
-              background: '#F8FBFF',
-              border: '1.5px solid #E0E7EF',
-              boxShadow: '0 4px 24px 0 rgba(30, 89, 174, 0.10)',
-            }}
-          >
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      mr: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <img
-                      src={robotIcon}
-                      alt="Asistan"
-                      style={{
-                        width: 32,
-                        height: 32,
-                        objectFit: 'contain',
-                        background: 'transparent',
-                        borderRadius: 0,
-                        userSelect: 'none',
-                        display: 'block',
-                      }}
-                      draggable={false}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="h6" sx={{
-                      fontWeight: 600,
-                      fontFamily: 'Manrope, Arial, sans-serif',
-                      color: '#0F3978'
-                    }}>
-                      MediRisk Asistan
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: '#4787E6',
-                      fontFamily: 'Inter, Arial, sans-serif'
-                    }}>
-                      Test hakkında sorularınızı sorun
-                    </Typography>
-                  </Box>
-                </Box>
-                <IconButton
-                  onClick={() => setIsChatExpanded(!isChatExpanded)}
-                  size="small"
-                  sx={{
-                    color: '#0F3978'
-                  }}
-                >
-                  {isChatExpanded ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-              </Box>
-            </Box>
+        <Stepper activeStep={0} sx={{ mb: 4 }}>
+          <Step>
+            <StepLabel
+              sx={{
+                '& .MuiStepLabel-label': {
+                  fontFamily: 'Manrope, Arial, sans-serif',
+                  color: '#0F3978',
+                  fontWeight: 600,
+                }
+              }}
+            >
+              Bilgileri Girin
+            </StepLabel>
+          </Step>
+          <Step>
+            <StepLabel
+              sx={{
+                '& .MuiStepLabel-label': {
+                  fontFamily: 'Manrope, Arial, sans-serif',
+                  color: '#0F3978',
+                  fontWeight: 600,
+                }
+              }}
+            >
+              Analiz
+            </StepLabel>
+          </Step>
+          <Step>
+            <StepLabel
+              sx={{
+                '& .MuiStepLabel-label': {
+                  fontFamily: 'Manrope, Arial, sans-serif',
+                  color: '#0F3978',
+                  fontWeight: 600,
+                }
+              }}
+            >
+              Sonuçlar
+            </StepLabel>
+          </Step>
+        </Stepper>
 
-            {/* Chat Mesajları */}
-            <Collapse in={isChatExpanded}>
-              <Box sx={{ height: 300, overflowY: 'auto', p: 2 }}>
-                <List sx={{ p: 0 }}>
-                  {chatMessages.map((message) => (
-                    <ListItem key={message.id} sx={{ px: 0 }}>
-                      <ListItemAvatar>
-                        <Avatar
-                          sx={{
-                            bgcolor: message.type === 'user' ? '#0F3978' : '#E0E7EF',
-                            color: message.type === 'user' ? '#fff' : '#0F3978',
-                            fontFamily: 'Manrope, Arial, sans-serif'
-                          }}
-                        >
-                          {message.type === 'user' ? (
-                            <Person sx={{ fontSize: 22 }} />
-                          ) : (
-                            <img
-                              src={robotIcon}
-                              alt="Asistan"
-                              style={{
-                                width: 22,
-                                height: 22,
-                                objectFit: 'contain',
-                                background: 'transparent',
-                                borderRadius: 0,
-                                userSelect: 'none',
-                                display: 'block',
-                              }}
-                              draggable={false}
-                            />
-                          )}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Box sx={{
-                            bgcolor: message.type === 'user' ? '#0F3978' : '#F8FBFF',
-                            color: message.type === 'user' ? '#fff' : '#0F3978',
-                            p: 1.5,
-                            borderRadius: 2,
-                            maxWidth: '80%',
-                            fontFamily: 'Inter, Arial, sans-serif'
-                          }}>
-                            <Typography variant="body2" sx={{ fontFamily: 'Inter, Arial, sans-serif' }}>
-                              {message.content}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <Box sx={{ mb: 4 }}>
+            {test.fields.map(renderField)}
+          </Box>
 
-              {/* Chat Input */}
-              <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-                <Box component="form" onSubmit={handleChatSubmit} sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Test hakkında soru sorun..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    sx={{
-                      '& .MuiOutlinedInput-root': { borderRadius: 3, background: '#fff' },
-                      fontFamily: 'Inter, Arial, sans-serif'
-                    }}
-                    InputProps={{
-                      style: {
-                        fontFamily: 'Inter, Arial, sans-serif',
-                        fontSize: '12px',
-                      },
-                    }}
-                  />
-                  <IconButton
-                    type="submit"
-                    color="primary"
-                    disabled={!chatInput.trim()}
-                    sx={{
-                      background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
-                      color: '#fff',
-                      borderRadius: 2,
-                      '&:hover': {
-                        background: 'linear-gradient(90deg, #1B69DE 0%, #0ED1B1 100%)',
-                      }
-                    }}
-                  >
-                    <Send />
-                  </IconButton>
-                </Box>
-              </Box>
-            </Collapse>
-          </Card>
-        </Box>
-      </Box>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => navigate('/dashboard')}
+              disabled={loading}
+              sx={{
+                borderRadius: 2,
+                fontWeight: 600,
+                fontFamily: 'Manrope, Arial, sans-serif',
+                color: '#0F3978',
+                borderColor: '#0ED1B1',
+                '&:hover': {
+                  borderColor: '#1B69DE',
+                  background: '#F0F6FF'
+                }
+              }}
+            >
+              İptal
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={loading}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
+              sx={{
+                borderRadius: 2,
+                fontWeight: 600,
+                fontFamily: 'Manrope, Arial, sans-serif',
+                background: 'linear-gradient(90deg, #0ED1B1 0%, #1B69DE 100%)',
+                color: '#fff',
+                boxShadow: '0 2px 8px 0 rgba(14,209,177,0.08)',
+                transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #1B69DE 0%, #0ED1B1 100%)',
+                  boxShadow: '0 4px 16px 0 rgba(27,105,222,0.12)',
+                  transform: 'translateY(-2px) scale(1.03)'
+                }
+              }}
+            >
+              {loading ? 'Analiz Ediliyor...' : 'Analizi Başlat'}
+            </Button>
+          </Box>
+        </form>
+      </Paper>
     </Container>
   );
 };
