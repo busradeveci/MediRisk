@@ -121,7 +121,7 @@ const Navbar: React.FC = () => {
                 },
               }}
             >
-              Dashboard
+              Ana Sayfa
             </Button>
             <Button
               color="inherit"
@@ -214,7 +214,7 @@ const Navbar: React.FC = () => {
             <Divider />
             <MenuItem onClick={() => handleNavigation('/dashboard')}>
               <Dashboard sx={{ mr: 2 }} />
-              Dashboard
+              Ana Sayfa
             </MenuItem>
             <MenuItem onClick={() => handleNavigation('/history')}>
               <History sx={{ mr: 2 }} />
