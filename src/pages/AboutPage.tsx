@@ -65,6 +65,11 @@ const AboutPage: React.FC = () => {
       name: 'Breast Cancer Dataset',
       source: 'Kaggle',
       description: 'Meme kanseri risk faktörlerini analiz eden detaylı veri seti'
+    },
+    {
+      name: 'Cardiovascular Disease Dataset',
+      source: 'Mendeley Data',
+      description: 'Kalp hastalığı erken teşhisi için geliştirilmiş kapsamlı veri seti'
     }
   ];
 
@@ -333,7 +338,7 @@ const AboutPage: React.FC = () => {
           mutlaka bir sağlık uzmanına başvurunuz.
         </Typography>
         <Typography variant="body2" sx={{ color: '#4787E6', fontFamily: 'Inter, Arial, sans-serif' }}>
-          <strong>Geliştirici:</strong> YZTA Web App Team | <strong>Versiyon:</strong> 1.0.0 | <strong>Son Güncelleme:</strong> 2024
+          <strong>Geliştirici:</strong> YZTA - MedOps Team | <strong>Versiyon:</strong> 1.0.0 | <strong>Son Güncelleme:</strong> 2025
         </Typography>
       </Paper>
     </Container>
