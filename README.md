@@ -3,11 +3,13 @@
 ## Takım İsmi
 **MedOps Takımı**
 
-## Takım Üyeleri
-- [Feyzanur İnan](https://github.com/feyzann) - Scrum Master & Developer
-- [Büşra Deveci](https://github.com/busradeveci) - Product Owner & Developer
-- [Eren Cice](https://github.com/erencice) - Developer
-- [Rabia Yaşa](https://github.com/rabiayasa4)
+##  Takım Üyeleri
+
+| Name | Title | Socials |
+|---|---|---|
+| Büşra Deveci | Product Owner & Developer | [![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/busradeveci) [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/busradeveci) |
+| Feyzanur İnan | Scrum Master & Developer | [![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/feyzann) [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/feyzanurinan/) |
+| Eren Cice | Developer | [![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/erencice) [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/erencice/) |
 
 ## Ürün İsmi
 **MediRisk Web Uygulaması**  
