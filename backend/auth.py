@@ -59,7 +59,7 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     """ID ile kullanıcı getirir"""
     return db.query(User).filter(User.id == user_id).first()
 
-def create_user(db: Session, email: str, name: str, password: str, age: int, gender: str, phone: str = None) -> User:
+def create_user(db: Session, email: str, name: str, password: str, age: Optional[int] = None, gender: Optional[str] = None, phone: str = None) -> User:
     """Yeni kullanıcı oluşturur"""
     hashed_password = get_password_hash(password)
     db_user = User(

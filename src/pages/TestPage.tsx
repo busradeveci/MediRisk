@@ -46,10 +46,23 @@ const TestPage: React.FC = () => {
   }
 
   const handleInputChange = (fieldName: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [fieldName]: value
+      };
+      
+      // Meme kanseri testi için cinsiyet değiştiğinde kadına özel alanları temizle
+      if (testId === 'breast-cancer' && fieldName === 'gender') {
+        if (value === 'Erkek') {
+          // Erkek seçildiğinde kadına özel alanları temizle
+          delete newData.earlyMenarche;
+          delete newData.lateMenopause;
+        }
+      }
+      
+      return newData;
+    });
     
     // Clear error when user starts typing
     if (errors[fieldName]) {
@@ -64,6 +77,16 @@ const TestPage: React.FC = () => {
     const newErrors: Record<string, string> = {};
     
     test.fields.forEach(field => {
+      // Meme kanseri testi için cinsiyet bazlı validasyon
+      if (testId === 'breast-cancer') {
+        const gender = formData.gender;
+        
+        // Erkek seçildiğinde kadına özel alanları validasyon dışında tut
+        if (gender === 'Erkek' && (field.name === 'earlyMenarche' || field.name === 'lateMenopause')) {
+          return; // Bu alanı validasyon dışında bırak
+        }
+      }
+      
       if (field.required && !formData[field.name]) {
         newErrors[field.name] = 'Bu alan zorunludur';
       }
@@ -197,6 +220,16 @@ const TestPage: React.FC = () => {
   const renderField = (field: any) => {
     const value = formData[field.name] || '';
     const error = errors[field.name];
+
+    // Meme kanseri testi için cinsiyet bazlı alan filtreleme
+    if (testId === 'breast-cancer') {
+      const gender = formData.gender;
+      
+      // Erkek seçildiğinde kadına özel alanları gizle
+      if (gender === 'Erkek' && (field.name === 'earlyMenarche' || field.name === 'lateMenopause')) {
+        return null;
+      }
+    }
 
     switch (field.type) {
       case 'number':

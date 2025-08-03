@@ -9,10 +9,6 @@ import {
   Link,
   Card,
   CardContent,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { PersonAdd } from '@mui/icons-material';
@@ -25,21 +21,12 @@ const RegisterPage: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    age: '',
-    gender: '',
     phone: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSelectChange = (e: any) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -67,11 +54,6 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
-    if (!formData.age || !formData.gender) {
-      setError('Yaş ve cinsiyet zorunludur.');
-      return;
-    }
-
     try {
       // Backend API'sine kayıt isteği gönder
       const response = await fetch('http://localhost:8000/register', {
@@ -83,8 +65,6 @@ const RegisterPage: React.FC = () => {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          age: parseInt(formData.age),
-          gender: formData.gender,
           phone: formData.phone || '',
           user_type: 'patient'
         }),
@@ -453,105 +433,6 @@ const RegisterPage: React.FC = () => {
                   },
                 }}
               />
-              <TextField
-                fullWidth
-                label="Yaş"
-                name="age"
-                type="number"
-                value={formData.age}
-                onChange={handleInputChange}
-                margin="normal"
-                required
-                sx={{
-                  mb: 2,
-                  fontSize: '12px',
-                  fontFamily: 'Inter, Arial, sans-serif',
-                  '& .MuiInputBase-root': {
-                    borderRadius: 3,
-                    background: '#F8FBFF',
-                    fontSize: '12px',
-                  },
-                  '& .MuiInputLabel-root': {
-                    fontSize: '12px',
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#E0E7EF',
-                  },
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#0ED1B1',
-                  },
-                  '& .MuiInputBase-root.Mui-focused': {
-                    boxShadow: '0 0 0 3px #0ED1B133',
-                  },
-                }}
-                InputProps={{
-                  style: {
-                    fontFamily: 'Inter, Arial, sans-serif',
-                    fontSize: '12px',
-                  },
-                }}
-                InputLabelProps={{
-                  style: {
-                    fontFamily: 'Inter, Arial, sans-serif',
-                    fontSize: '12px',
-                  },
-                }}
-              />
-              <FormControl fullWidth required sx={{ mb: 2 }}>
-                <InputLabel
-                  sx={{
-                    fontFamily: 'Inter, Arial, sans-serif',
-                    fontSize: '13px', // 13px olarak güncellendi
-                  }}
-                >
-                  Cinsiyet
-                </InputLabel>
-                <Select
-                  name="gender"
-                  value={formData.gender}
-                  label="Cinsiyet"
-                  onChange={handleSelectChange}
-                  sx={{
-                    fontFamily: 'Inter, Arial, sans-serif',
-                    fontSize: '13px', // 13px olarak güncellendi
-                    borderRadius: 3,
-                    background: '#F8FBFF',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#E0E7EF',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#0ED1B1',
-                    },
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        fontFamily: 'Inter, Arial, sans-serif',
-                        fontSize: '13px', // Açılır menüde de 13px
-                      }
-                    }
-                  }}
-                >
-                  <MenuItem
-                    value="Erkek"
-                    sx={{
-                      fontFamily: 'Inter, Arial, sans-serif',
-                      fontSize: '13px', // 13px olarak güncellendi
-                    }}
-                  >
-                    Erkek
-                  </MenuItem>
-                  <MenuItem
-                    value="Kadın"
-                    sx={{
-                      fontFamily: 'Inter, Arial, sans-serif',
-                      fontSize: '13px', // 13px olarak güncellendi
-                    }}
-                  >
-                    Kadın
-                  </MenuItem>
-                </Select>
-              </FormControl>
               <TextField
                 fullWidth
                 label="Telefon (opsiyonel)"

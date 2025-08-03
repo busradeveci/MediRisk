@@ -7,8 +7,8 @@ class UserCreate(BaseModel):
     email: str
     name: str
     password: str
-    age: int
-    gender: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
     phone: Optional[str] = None
 
 class UserLogin(BaseModel):
@@ -19,8 +19,8 @@ class UserResponse(BaseModel):
     id: int
     email: str
     name: str
-    age: int
-    gender: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
     phone: Optional[str] = None
     user_type: str
     created_at: datetime

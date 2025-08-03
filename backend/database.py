@@ -39,8 +39,8 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     name = Column(String(255), nullable=False)
     password_hash = Column(String(255), nullable=False)
-    age = Column(Integer)
-    gender = Column(String(50))
+    age = Column(Integer, nullable=True)
+    gender = Column(String(50), nullable=True)
     phone = Column(String(20))
     user_type = Column(String(50), default="patient")  # patient, doctor
     created_at = Column(DateTime, default=datetime.utcnow)
