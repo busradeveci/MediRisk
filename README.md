@@ -436,7 +436,7 @@ Sprint 2 başarıyla tamamlandı. Temel sistem altyapısı hazır, kullanıcı a
 #### Mevcut Uygulama Durumu
 - Web kullanıcı arayüzünde AI entegrasyonu ve veritabanı bağlantısı tamamlandı.
 - Makine öğrenmesi API'leri ve AI chatbot sistemi aktif.
-- [Web görsellerine git](./sprintThree/app_ss)
+- [Web videosuna git](https://youtu.be/zq_dMn7zZEQ)
 
 ---
 
