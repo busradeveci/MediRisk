@@ -613,3 +613,223 @@ def main():
 Sprint 3 başarıyla tamamlandı. Proje artık production-ready durumda. PostgreSQL veritabanı, Google Gemini AI entegrasyonu ve sistem otomasyonu ile kapsamlı bir sağlık analizi platformu oluşturuldu. Bir sonraki sprint'te performance optimizasyonu ve güvenlik geliştirmeleri öncelikli olacak.
 
 </details>
+
+---
+
+<details>
+<summary> <h3> KURULUM REHBERİ </h3> </summary>
+
+### Ön Gereksinimler
+
+#### 1. Sistem Gereksinimleri
+- **Python:** 3.8 veya üzeri
+- **Node.js:** 14.0 veya üzeri
+- **NPM:** 6.0 veya üzeri
+- **PostgreSQL:** 12.0 veya üzeri
+
+#### 2. PostgreSQL Veritabanı Kurulumu
+
+##### Windows için PostgreSQL Kurulumu:
+```bash
+# 1. PostgreSQL'i indirin ve kurun
+# https://www.postgresql.org/download/windows/
+
+# 2. Kurulum sırasında şifrenizi not alın
+# 3. pgAdmin'i de kurun (opsiyonel ama önerilen)
+
+# 4. Veritabanını oluşturun
+psql -U postgres
+CREATE DATABASE medirisk_db;
+CREATE USER medirisk_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE medirisk_db TO medirisk_user;
+\q
+```
+
+##### macOS için PostgreSQL Kurulumu:
+```bash
+# Homebrew ile kurulum
+brew install postgresql
+brew services start postgresql
+
+# Veritabanını oluşturun
+createdb medirisk_db
+psql medirisk_db
+CREATE USER medirisk_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE medirisk_db TO medirisk_user;
+\q
+```
+
+##### Linux (Ubuntu/Debian) için PostgreSQL Kurulumu:
+```bash
+# PostgreSQL kurulumu
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# PostgreSQL servisini başlatın
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Veritabanını oluşturun
+sudo -u postgres psql
+CREATE DATABASE medirisk_db;
+CREATE USER medirisk_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE medirisk_db TO medirisk_user;
+\q
+```
+
+#### 3. Environment Variables (.env) Dosyası
+
+Proje kök dizininde `.env` dosyası oluşturun:
+
+```env
+# PostgreSQL Veritabanı Ayarları
+DATABASE_URL=postgresql://medirisk_user:your_password@localhost:5432/medirisk_db
+
+# Google Gemini AI API
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# JWT Secret Key
+JWT_SECRET_KEY=your_jwt_secret_key_here
+
+# Backend Port
+BACKEND_PORT=8008
+
+# Frontend Port
+FRONTEND_PORT=3001
+```
+
+### Kurulum Adımları
+
+#### 1. Projeyi Klonlayın
+```bash
+git clone https://github.com/busradeveci/YZTA-AI-17.git
+cd YZTA-AI-17
+```
+
+#### 2. Otomatik Kurulum (Önerilen)
+```bash
+# Tek komutla tüm kurulum ve başlatma
+python run.py
+```
+
+#### 3. Manuel Kurulum
+
+##### Backend Kurulumu:
+```bash
+# Python bağımlılıklarını kurun
+cd backend
+pip install -r requirements.txt
+
+# Veritabanı tablolarını oluşturun
+python database.py
+
+# Backend'i başlatın
+python main.py
+```
+
+##### Frontend Kurulumu:
+```bash
+# Node.js bağımlılıklarını kurun
+npm install
+
+# Frontend'i başlatın
+npm start
+```
+
+### Veritabanı Yönetimi
+
+#### Veritabanı Bağlantı Testi:
+```bash
+# PostgreSQL bağlantısını test edin
+psql -h localhost -U medirisk_user -d medirisk_db
+```
+
+#### Veritabanı Yedekleme:
+```bash
+# Veritabanını yedekleyin
+pg_dump -h localhost -U medirisk_user medirisk_db > backup.sql
+
+# Yedeği geri yükleyin
+psql -h localhost -U medirisk_user medirisk_db < backup.sql
+```
+
+#### Veritabanı Sıfırlama:
+```bash
+# Tüm tabloları silin ve yeniden oluşturun
+python backend/database.py --reset
+```
+
+### API Dokümantasyonu
+
+Backend çalıştıktan sonra API dokümantasyonuna erişin:
+- **Swagger UI:** http://localhost:8008/docs
+- **ReDoc:** http://localhost:8008/redoc
+
+### Sorun Giderme
+
+#### PostgreSQL Bağlantı Sorunları:
+```bash
+# PostgreSQL servisinin çalıştığını kontrol edin
+# Windows:
+services.msc  # PostgreSQL servisini kontrol edin
+
+# macOS/Linux:
+sudo systemctl status postgresql
+```
+
+#### Port Çakışması:
+```bash
+# Kullanılan portları kontrol edin
+netstat -ano | findstr :8008  # Windows
+lsof -i :8008                 # macOS/Linux
+
+# Portları temizleyin
+python backend/port_config.json --clean
+```
+
+#### Bağımlılık Sorunları:
+```bash
+# Python bağımlılıklarını yeniden kurun
+pip uninstall -r backend/requirements.txt -y
+pip install -r backend/requirements.txt
+
+# Node.js bağımlılıklarını yeniden kurun
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Production Deployment
+
+#### Docker ile Deployment:
+```bash
+# Docker image oluşturun
+docker build -t medirisk-app .
+
+# Container'ı çalıştırın
+docker run -p 8008:8008 -p 3001:3001 medirisk-app
+```
+
+#### Environment Variables (Production):
+```env
+# Production ayarları
+DATABASE_URL=postgresql://user:pass@prod-db-host:5432/medirisk_db
+GEMINI_API_KEY=your_production_api_key
+JWT_SECRET_KEY=your_production_secret_key
+NODE_ENV=production
+```
+
+### Güvenlik Notları
+
+1. **API Anahtarları:** `.env` dosyasını asla git'e commit etmeyin
+2. **Veritabanı Şifreleri:** Güçlü şifreler kullanın
+3. **JWT Secret:** En az 32 karakter uzunluğunda rastgele string kullanın
+4. **HTTPS:** Production'da mutlaka HTTPS kullanın
+
+### Destek
+
+Kurulum sorunları için:
+- [GitHub Issues](https://github.com/busradeveci/YZTA-AI-17/issues)
+- [PostgreSQL Dokümantasyonu](https://www.postgresql.org/docs/)
+- [FastAPI Dokümantasyonu](https://fastapi.tiangolo.com/)
+
+</details>
