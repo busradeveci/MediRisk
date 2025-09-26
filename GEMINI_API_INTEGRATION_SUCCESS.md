@@ -2,7 +2,7 @@
 
 ## ✅ Başarıyla Tamamlandı!
 
-**API Key:** `***REMOVED***`
+**API Key:** `[REDACTED_FOR_SECURITY]`
 **Test Tarihi:** 29 Temmuz 2025
 **Test Saati:** 23:26
 
@@ -12,7 +12,7 @@
 
 ### 1. **.env Dosyası Güncellendi**
 ```properties
-GEMINI_API_KEY=***REMOVED***
+GEMINI_API_KEY=[REDACTED_FOR_SECURITY]
 GEMINI_MODEL=gemini-1.5-flash
 GEMINI_TEMPERATURE=0.3
 GEMINI_MAX_TOKENS=2000
@@ -70,7 +70,7 @@ GEMINI_MAX_TOKENS=2000
 
 ### API Konfigürasyonu:
 ```python
-GEMINI_API_KEY: ***REMOVED***
+GEMINI_API_KEY: [REDACTED_FOR_SECURITY]
 GEMINI_MODEL: gemini-1.5-flash
 TEMPERATURE: 0.3
 MAX_TOKENS: 2000

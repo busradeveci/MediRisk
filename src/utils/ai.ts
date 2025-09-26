@@ -1,6 +1,6 @@
 import { TestResult } from '../types';
 
-const GEMINI_API_KEY = '***REMOVED***';
+const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export interface AIResponse {
@@ -120,6 +120,10 @@ export async function analyzeWithAI(
   testResult: TestResult | null = null, 
   context?: string
 ): Promise<AIResponse> {
+  if (!GEMINI_API_KEY) {
+    console.error('Gemini API key is not set. Please set REACT_APP_GEMINI_API_KEY in your .env file.');
+    return generateFallbackResponse(userInput);
+  }
   try {
     if (!userInput.trim()) {
       return generateFallbackResponse("Genel danışmanlık");

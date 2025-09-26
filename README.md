@@ -688,7 +688,8 @@ Proje kök dizininde `.env` dosyası oluşturun:
 DATABASE_URL=postgresql://medirisk_user:your_password@localhost:5432/medirisk_db
 
 # Google Gemini AI API
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_backend_gemini_api_key_here
+REACT_APP_GEMINI_API_KEY=your_frontend_gemini_api_key_here
 
 # JWT Secret Key
 JWT_SECRET_KEY=your_jwt_secret_key_here
